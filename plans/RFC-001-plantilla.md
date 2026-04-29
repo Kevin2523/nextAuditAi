@@ -1,40 +1,40 @@
-# RFC-001 - Template
+# RFC-001 - Plantilla
 
-| Field | Value |
+| Campo | Valor |
 | --- | --- |
 | ID | RFC-001 |
-| Title | RFC template |
-| Status | Draft |
-| Date | YYYY-MM-DD |
-| Author | Team or owner |
+| Titulo | Plantilla RFC |
+| Estado | Borrador |
+| Fecha | YYYY-MM-DD |
+| Autor | Equipo o responsable |
 
-## Summary
+## Resumen
 
-One short paragraph describing the proposed change.
+Parrafo breve describiendo el cambio propuesto.
 
-## Problem
+## Problema
 
-What problem is being solved and why now.
+Que problema se resuelve y por que se aborda ahora.
 
-## Proposal
+## Propuesta
 
-Concrete technical or process change.
+Cambio tecnico o de proceso propuesto de forma concreta.
 
-## Alternatives
+## Alternativas
 
-Other options considered and why they were not selected.
+Opciones evaluadas y por que no fueron seleccionadas.
 
-## Impact
+## Impacto
 
-- Affected components:
-- Risks:
-- Dependencies:
-- Related issues:
+- Componentes afectados:
+- Riesgos:
+- Dependencias:
+- Issues relacionados:
 
-## Rollout Plan
+## Plan de despliegue
 
-Implementation steps, validation, and rollback strategy.
+Pasos de implementacion, validacion y estrategia de rollback.
 
-## Acceptance Criteria
+## Criterios de aceptacion
 
-Measurable conditions to close the RFC.
+Condiciones medibles para cerrar el RFC.

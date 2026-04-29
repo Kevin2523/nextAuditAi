@@ -1,48 +1,48 @@
-# RFC-002 - Migration to NextAudit AI
+# RFC-002 - Migracion a NextAudit AI
 
-| Field | Value |
+| Campo | Valor |
 | --- | --- |
 | ID | RFC-002 |
-| Title | Migration from ai-compliance-sentinel to NextAudit AI |
-| Status | Approved |
-| Date | 2026-04-28 |
-| Author | NextAudit AI Team |
+| Titulo | Migracion de ai-compliance-sentinel a NextAudit AI |
+| Estado | Aprobado |
+| Fecha | 2026-04-28 |
+| Autor | Equipo NextAudit AI |
 
-## Summary
+## Resumen
 
-This RFC defines the repository migration and baseline cleanup for the new NextAudit AI SaaS identity.
+Este RFC define la migracion del repositorio y la limpieza de linea base para la nueva identidad SaaS de NextAudit AI.
 
-## Scope
+## Alcance
 
-- Rebrand project references to NextAudit AI / nextaudit-ai.
-- Keep `main` minimal and stable.
-- Keep full implementation in `develop`.
-- Keep documentation-focused work in `docs`.
+- Rebranding de referencias del proyecto a NextAudit AI / nextaudit-ai.
+- Mantener `main` minima y estable.
+- Mantener la implementacion completa en `develop`.
+- Mantener el trabajo documental en `docs`.
 
-## Branch Strategy
+## Estrategia de ramas
 
-- `main`: stable base (`README.md`, `.gitignore`, base compose files).
-- `develop`: active product code and infrastructure evolution.
-- `docs`: technical documentation and manuals.
+- `main`: base estable (`README.md`, `.gitignore`, compose base).
+- `develop`: evolucion activa del producto y la infraestructura.
+- `docs`: documentacion tecnica y manuales.
 
-## Key Decisions
+## Decisiones clave
 
-1. Remove outdated onboarding/evaluation files from `develop`.
-2. Update planning docs to the SaaS roadmap context.
-3. Keep Ollama as optional infrastructure, not core orchestration brain.
+1. Eliminar de `develop` archivos antiguos de onboarding y evaluacion.
+2. Actualizar `plans/` al contexto de roadmap SaaS.
+3. Mantener Ollama como infraestructura opcional, no como cerebro principal de orquestacion.
 
-## Risks
+## Riesgos
 
-- Legacy references may still appear in historical docs.
-- Team members using old branch flow may need re-onboarding.
+- Pueden quedar referencias heredadas en documentos historicos.
+- El equipo puede requerir re-onboarding por el cambio de flujo de ramas.
 
-## Mitigations
+## Mitigaciones
 
-- Enforce branch conventions in `CONTRIBUTING.md`.
-- Record migration changes in `CHANGELOG.md`.
+- Reforzar convenciones de ramas en `CONTRIBUTING.md`.
+- Registrar los cambios de migracion en `CHANGELOG.md`.
 
-## Acceptance Criteria
+## Criterios de aceptacion
 
-- `develop` contains no obsolete onboarding/evaluation docs.
-- `plans/` reflects the new product direction.
-- Contribution and changelog docs match current workflow.
+- `develop` no contiene documentos obsoletos de onboarding/evaluacion.
+- `plans/` refleja la direccion actual del producto.
+- `CONTRIBUTING.md` y `CHANGELOG.md` coinciden con el flujo vigente.

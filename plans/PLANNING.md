@@ -1,21 +1,21 @@
-# Planning - NextAudit AI
+# Planificacion - NextAudit AI
 
-This folder contains active planning artifacts for the NextAudit AI SaaS evolution.
+Esta carpeta contiene los artefactos activos de planificacion para la evolucion SaaS de NextAudit AI.
 
-## Purpose
+## Proposito
 
-- Keep product and technical planning aligned with the current repository scope.
-- Track RFCs for architecture, operations, and delivery decisions.
-- Provide a single source of truth for roadmap and implementation intent.
+- Mantener alineadas la planificacion de producto y la planificacion tecnica con el alcance actual del repositorio.
+- Registrar RFCs de arquitectura, operaciones y entrega.
+- Proveer una fuente unica de verdad para roadmap e intencion de implementacion.
 
-## Current Documents
+## Documentos actuales
 
-| Document | Purpose | Status |
+| Documento | Proposito | Estado |
 | --- | --- | --- |
-| [RFC-001-plantilla.md](RFC-001-plantilla.md) | RFC template for future change requests | Active |
-| [RFC-002-init.md](RFC-002-init.md) | Initial migration RFC for NextAudit AI | Active |
+| [RFC-001-plantilla.md](RFC-001-plantilla.md) | Plantilla RFC para futuras solicitudes de cambio | Activo |
+| [RFC-002-init.md](RFC-002-init.md) | RFC inicial de migracion hacia NextAudit AI | Activo |
 
-## Notes
+## Notas
 
-- Historical course-only planning documents were removed from `develop`.
-- Branch `docs` is reserved for documentation-focused work.
+- Se eliminaron de `develop` los documentos historicos ligados al contexto academico previo.
+- La rama `docs` queda reservada para trabajo enfocado en documentacion.

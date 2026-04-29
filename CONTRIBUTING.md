@@ -1,40 +1,40 @@
-# Contributing - NextAudit AI
+# Guia de contribucion - NextAudit AI
 
-Thanks for contributing to NextAudit AI.
+Gracias por contribuir a NextAudit AI.
 
-## Branch Workflow
+## Flujo de ramas
 
-| Branch | Purpose |
+| Rama | Proposito |
 | --- | --- |
-| `main` | Stable minimal base |
-| `develop` | Active development and integration |
-| `docs` | Documentation-only updates |
+| `main` | Base estable minima |
+| `develop` | Desarrollo activo e integracion |
+| `docs` | Actualizaciones exclusivas de documentacion |
 
-## Rules
+## Reglas
 
-- Start feature/fix branches from `develop`.
-- Open PRs into `develop` for code changes.
-- Use PRs into `main` only for stable baseline adjustments.
-- Use PRs into `docs` only for documentation changes.
+- Crea ramas de trabajo (`feature/`, `fix/`, etc.) desde `develop`.
+- Abre PR hacia `develop` para cambios de codigo.
+- Usa PR hacia `main` solo para ajustes de linea base estable.
+- Usa PR hacia `docs` solo para cambios de documentacion.
 
-## Naming
+## Convenciones de nombres
 
-Use branch prefixes:
+Prefijos recomendados de rama:
 
 - `feature/`
 - `fix/`
 - `infra/`
 - `docs/`
 
-## Commit Guidance
+## Recomendaciones de commits
 
-- Keep commits atomic and scoped.
-- Prefer conventional commit style (`feat:`, `fix:`, `docs:`, `chore:`).
-- Do not commit secrets or private keys.
+- Mantener commits pequenos, atomicos y con alcance claro.
+- Preferir estilo de commits convencionales (`feat:`, `fix:`, `docs:`, `chore:`).
+- No subir secretos ni llaves privadas.
 
-## Pre-PR Checklist
+## Checklist antes del PR
 
-- Code or docs are aligned with branch purpose.
-- Environment values are not hardcoded with secrets.
-- Compose and automation changes were sanity-checked.
-- README and plans were updated when architecture changed.
+- El codigo o la documentacion estan alineados con el proposito de la rama destino.
+- No hay secretos hardcodeados en variables o archivos.
+- Los cambios de compose y automatizacion fueron validados de forma basica.
+- README y `plans/` se actualizaron cuando hubo cambios de arquitectura o flujo.

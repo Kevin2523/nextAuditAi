@@ -1,22 +1,22 @@
 # Changelog
 
-All notable changes to NextAudit AI are documented in this file.
+Todos los cambios relevantes de NextAudit AI se documentan en este archivo.
 
-The format follows Keep a Changelog and Semantic Versioning where applicable.
+El formato sigue Keep a Changelog y Versionado Semantico cuando aplica.
 
 ## [0.2.0] - 2026-04-28
 
-### Changed
+### Cambiado
 
-- Migrated identity from AI Compliance Sentinel to NextAudit AI.
-- Updated branch model to `main`, `develop`, and `docs`.
-- Removed outdated onboarding/evaluation docs from `develop`.
-- Refactored planning artifacts in `plans/` to match SaaS direction.
-- Updated `CONTRIBUTING.md` for the new collaboration workflow.
+- Se migro la identidad de AI Compliance Sentinel a NextAudit AI.
+- Se actualizo el modelo de ramas a `main`, `develop` y `docs`.
+- Se eliminaron de `develop` los documentos antiguos de onboarding y evaluacion.
+- Se refactorizaron los artefactos de planificacion en `plans/` para alinearlos con la direccion SaaS.
+- Se actualizo `CONTRIBUTING.md` con el nuevo flujo de colaboracion.
 
 ## [0.1.0] - 2026-04-28
 
-### Added
+### Agregado
 
-- Initial repository bootstrap for NextAudit AI.
-- Base compose files and core project documentation.
+- Inicializacion del repositorio para NextAudit AI.
+- Archivos base de Docker Compose y documentacion principal del proyecto.
