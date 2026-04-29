@@ -1,47 +1,40 @@
-# RFC-001 — Plantilla para solicitudes de cambio
+# RFC-001 - Template
 
-| Campo | Valor |
-|-------|--------|
-| **ID** | RFC-001 |
-| **Título** | Plantilla para nuevas solicitudes de cambio |
-| **Estado** | Borrador |
-| **Fecha** | *(fecha de creación)* |
-| **Autor** | *(nombre o equipo)* |
+| Field | Value |
+| --- | --- |
+| ID | RFC-001 |
+| Title | RFC template |
+| Status | Draft |
+| Date | YYYY-MM-DD |
+| Author | Team or owner |
 
----
+## Summary
 
-## Resumen
+One short paragraph describing the proposed change.
 
-Breve descripción del cambio o propuesta (1–3 líneas).
+## Problem
 
----
+What problem is being solved and why now.
 
-## Motivación
+## Proposal
 
-Por qué se propone este cambio: problema a resolver, oportunidad de mejora o requisito.
+Concrete technical or process change.
 
----
+## Alternatives
 
-## Propuesta
+Other options considered and why they were not selected.
 
-Descripción concreta del cambio: qué se hace, qué se añade o modifica, y cómo afecta al diseño/arquitectura actual.
+## Impact
 
----
+- Affected components:
+- Risks:
+- Dependencies:
+- Related issues:
 
-## Alternativas consideradas
+## Rollout Plan
 
-Otras opciones evaluadas y por qué se descartaron (si aplica).
+Implementation steps, validation, and rollback strategy.
 
----
+## Acceptance Criteria
 
-## Impacto
-
-- **Componentes afectados:** *(lista)*
-- **Riesgos o dependencias:** *(si aplica)*
-- **Issues relacionados:** *(enlaces a GitHub issues)*
-
----
-
-## Aprobación / Próximos pasos
-
-*(Opcional: criterios de aceptación, revisión, o pasos para implementar.)*
+Measurable conditions to close the RFC.

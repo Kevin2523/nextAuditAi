@@ -1,33 +1,21 @@
-# Planificación general del proyecto
+# Planning - NextAudit AI
 
-Este documento es el punto de entrada a la planificación, diseño y arquitectura del **AI-Compliance Real-Time Sentinel**. La carpeta **`plans/`** centraliza:
+This folder contains active planning artifacts for the NextAudit AI SaaS evolution.
 
-- **Planificación general** y roadmap de alto nivel.
-- **Soporte al diseño y arquitectura** en marcha.
-- **Asignaciones complejas** y desglose de tareas.
-- **Planificación de IA** (modelos, prompts, flujos).
-- **Recursos de soporte:** imágenes, tablas, datos y documentos que alimentan los issues y la planificación del proyecto.
+## Purpose
 
-Los documentos de texto en esta carpeta están en Markdown (`.md`). Las imágenes, tablas exportadas y datos de soporte pueden convivir en subcarpetas dentro de `plans/` según se necesite.
+- Keep product and technical planning aligned with the current repository scope.
+- Track RFCs for architecture, operations, and delivery decisions.
+- Provide a single source of truth for roadmap and implementation intent.
 
----
+## Current Documents
 
-## Para qué sirve esta carpeta
+| Document | Purpose | Status |
+| --- | --- | --- |
+| [RFC-001-plantilla.md](RFC-001-plantilla.md) | RFC template for future change requests | Active |
+| [RFC-002-init.md](RFC-002-init.md) | Initial migration RFC for NextAudit AI | Active |
 
-- Dar **contexto único** a la planificación: un solo lugar donde consultar diseño, arquitectura y decisiones de alto nivel.
-- **Vincular issues y PRs** con documentos concretos (RFCs, diseños, métricas) para trazabilidad.
-- **Soporte a la IA:** prompts, criterios de cumplimiento y datos de referencia que el sistema pueda usar.
-- **Historial de solicitudes de cambio:** propuestas, mejoras y RFCs documentados y enlazados desde la tabla inferior.
+## Notes
 
----
-
-## Documentos de solicitud de cambios sugeridos (RFCs)
-
-Documentos que describen **requests de cambios** (propuestas, mejoras, diseños) y que viven en `plans/`. Cada fila apunta a un documento dentro de esta carpeta.
-
-| Documento | Descripción | Estado |
-|-----------|-------------|--------|
-| [RFC-001-plantilla.md](RFC-001-plantilla.md) | Plantilla para nuevas solicitudes de cambio | Borrador |
-| [RFC-002-init.md](RFC-002-init.md) | Inicialización del proyecto: hoja de ruta crítica, milestones e issues | Aprobado |
-
-*Se añaden filas a esta tabla conforme se creen nuevos RFCs o propuestas en `plans/`.*
+- Historical course-only planning documents were removed from `develop`.
+- Branch `docs` is reserved for documentation-focused work.
