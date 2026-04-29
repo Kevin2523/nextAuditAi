@@ -1,32 +1,22 @@
 # Changelog
 
-Todos los cambios notables del proyecto **AI-Compliance Real-Time Sentinel** se documentan en este archivo.
+Todos los cambios relevantes de NextAudit AI se documentan en este archivo.
 
-El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/), y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/) cuando aplique.
+El formato sigue Keep a Changelog y Versionado Semantico cuando aplica.
 
----
+## [0.2.0] - 2026-04-28
 
-## [16.0.0] - 2026-02-02
+### Cambiado
 
-### Añadido
+- Se migro la identidad de AI Compliance Sentinel a NextAudit AI.
+- Se actualizo el modelo de ramas a `main`, `develop` y `docs`.
+- Se eliminaron de `develop` los documentos antiguos de onboarding y evaluacion.
+- Se refactorizaron los artefactos de planificacion en `plans/` para alinearlos con la direccion SaaS.
+- Se actualizo `CONTRIBUTING.md` con el nuevo flujo de colaboracion.
 
-- **Licencia:** CC BY-NC-SA 4.0 (Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International). Archivo `LICENSE` y sección Licencia en README.
-- **Disclaimer:** Sección en README indicando origen universitario (UTP, Coclé, Práctica Laboral en Desarrollo de Software), colaboración Cerebro Digital e Infraforge, y recomendación de no uso en producción.
-- **Planificación y diseño:**
-  - Carpeta `plans/` para planificación general, diseño, RFCs y soporte a issues.
-  - `plans/PLANNING.md`: documento principal con propósito de la carpeta y tabla de RFCs.
-  - `plans/RFC-001-plantilla.md`: plantilla para nuevas solicitudes de cambio.
-  - `plans/RFC-002-init.md`: RFC inicial con hoja de ruta crítica (4 semanas), milestones (M1–M4), mapeo de issues por rol/semana, dependencias entre roles y criterios de evaluación.
-- **README:** Sección "Planificación y diseño" con enlace a `plans/` y `PLANNING.md`; actualización de la estructura del repositorio.
-- **CI:** Workflow de GitHub Actions (`.github/workflows/ci.yml`) para ramas `main`, `develop` y `testing` (job placeholder).
-- **Documentación:** `CONTRIBUTING.md` (roles, flujo de trabajo, reglas de oro), `docs/EVALUACION.md` (cronograma 4 semanas, métricas, criterios de evaluación), `docs/GUIA_ONBOARDING_DESARROLLADOR.md` (onboarding).
-- **CHANGELOG:** Este archivo.
+## [0.1.0] - 2026-04-28
 
-### Sin cambios
+### Agregado
 
-- Especificación del proyecto v16.0 (visión, Osquery, Groq/Ollama, ChatOps, reglas de oro).
-- Flujo de ramas: `develop` → `testing` → `main`.
-
----
-
-[16.0.0]: https://github.com/maurorosero/nextaudit-ai/releases/tag/v16.0.0
+- Inicializacion del repositorio para NextAudit AI.
+- Archivos base de Docker Compose y documentacion principal del proyecto.
