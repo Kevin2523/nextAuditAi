@@ -1,64 +1,36 @@
-# Guía rápida de uso (AI Stack + Fleet)
+# Guia rapida de uso (AI Stack + Fleet)
 
-Antes de levantar el stack con `docker compose`, hay 3 cosas importantes que debes tener en cuenta:
+Antes de levantar el stack con `docker compose`, valida estos puntos.
 
----
+## 1) Certificados TLS (`src/ai-sentinel/certs/`)
 
-## 1) Certificados TLS (carpeta `certs/`)
+Genera los certificados TLS antes de iniciar los servicios.
+Consulta `src/ai-sentinel/certs/que va aqui.md` para el procedimiento.
 
-Debes generar los certificados TLS dentro de la carpeta `certs/` **antes** de levantar el compose.
+## 2) Dominio o IP de certificados
 
-📌 Sigue las instrucciones del archivo `.md` que está dentro de `certs/`.
+El `CN` del certificado debe ser un dominio o IP alcanzable por los endpoints.
 
----
+- Si usas `localhost`, solo funcionara para pruebas locales en el mismo host.
+- Para flota real, usa dominio o IP del servidor.
 
-## 2) Dominio / IP usada en los certificados (MUY IMPORTANTE)
+Asegura resolucion correcta en servidor y endpoints (DNS o archivo `hosts`).
 
-Cuando generes los certificados TLS, vas a definir un `CN` con un **dominio o IP**.
+## 3) Llave privada de Fleet en produccion
 
-Ese valor será importante porque:
+Define un valor seguro para `FLEET_SERVER_PRIVATE_KEY`.
+No uses valores de demostracion en ambientes reales.
 
-- Será la dirección desde donde podrás acceder a Fleet (UI/API).
-- Será la dirección a la que los instaladores generados por Fleet intentarán conectarse (enroll).
-- Será la dirección que los endpoints con `osquery` usarán para conectarse al servidor.
-
----
-
-### Caso A: Usar `localhost`
-Si generas certificados con `localhost`:
-
-✅ Podrás acceder a Fleet desde el mismo servidor fácilmente.  
-❌ Pero los endpoints (otras máquinas) **nunca podrán conectarse** a Fleet, porque para ellos `localhost` significa “ellos mismos”.
-
----
-
-### Caso B: Usar un dominio o IP real
-Si generas certificados con un dominio custom (ej: `fleet.midominio.com`) o con la IP pública del servidor:
-
-✅ El servidor podrá exponer Fleet correctamente.  
-✅ Los endpoints podrán conectarse y enrollarse sin problema.
-
-📌 Importante:
-- El servidor donde levantes el compose debe resolver ese dominio hacia su propia IP.
-- Los endpoints también deben resolver ese dominio hacia la IP actual del servidor.
-
-Esto se puede lograr con:
-- DNS público (Cloudflare, etc.)
-- o entradas en el archivo `hosts` (solo para pruebas).
-
----
-
-## 3) Producción: cambiar la llave privada de Fleet
-
-En el archivo `.env` existe una variable llamada:
-
-`FLEET_SERVER_PRIVATE_KEY`
-
-Por defecto puede venir con un valor "demo" para que el stack levante sin problemas.
-
-⚠️ **Si vas a usar esto en producción, debes cambiar esta llave.**
-
-Puedes generar una llave segura con:
+Ejemplo para generar una llave:
 
 ```bash
 openssl rand -base64 32
+```
+
+## 4) Levantar entorno de desarrollo
+
+```bash
+docker compose -f src/ai-sentinel/docker-compose.dev.yml up -d
+```
+
+Luego valida estado de contenedores y salud de Fleet/n8n/Flowise.
