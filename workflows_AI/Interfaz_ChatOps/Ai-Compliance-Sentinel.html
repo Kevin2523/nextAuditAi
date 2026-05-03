@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Compliance Sentinel | Asistente de Cumplimiento</title>
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-dark: #030712;
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #0d1117;
+            --bg-card: #161b22;
+            --accent-cyan: #00d4ff;
+            --accent-cyan-dim: rgba(0, 212, 255, 0.15);
+            --accent-purple: #a855f7;
+            --text-primary: #f0f6fc;
+            --text-secondary: #8b949e;
+            --text-muted: #6e7681;
+            --border-subtle: rgba(240, 246, 252, 0.1);
+            --border-accent: rgba(0, 212, 255, 0.3);
+            --gradient-accent: linear-gradient(135deg, #00d4ff 0%, #a855f7 100%);
+            --gradient-bg: radial-gradient(ellipse at 50% 0%, rgba(0, 212, 255, 0.08) 0%, transparent 50%),
+                           radial-gradient(ellipse at 80% 80%, rgba(168, 85, 247, 0.06) 0%, transparent 40%),
+                           var(--bg-dark);
+            --shadow-glow: 0 0 60px rgba(0, 212, 255, 0.15);
+            --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.4);
+            --font-main: 'Outfit', -apple-system, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background: var(--bg-dark);
+            background-image: var(--gradient-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Background Effects */
+        .bg-effects {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .grid-pattern {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            mask-image: radial-gradient(ellipse at 50% 30%, black 0%, transparent 60%);
+        }
+
+        .glow-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.4;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .glow-orb.cyan {
+            width: 600px;
+            height: 600px;
+            background: var(--accent-cyan);
+            top: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .glow-orb.purple {
+            width: 400px;
+            height: 400px;
+            background: var(--accent-purple);
+            bottom: 10%;
+            right: 10%;
+            animation-delay: -4s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(30px); }
+        }
+
+        /* Navigation */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 1rem 2rem;
+            background: rgba(3, 7, 18, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .navbar-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient-accent);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .logo-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .nav-tag {
+            font-size: 0.75rem;
+            color: var(--accent-cyan);
+            background: var(--accent-cyan-dim);
+            padding: 0.25rem 0.625rem;
+            border-radius: 20px;
+            margin-left: 0.5rem;
+        }
+
+        /* Features Strip */
+        .features-strip {
+            position: relative;
+            z-index: 10;
+            padding: 3rem 2rem;
+            border-top: 1px solid var(--border-subtle);
+            background: rgba(13, 17, 23, 0.5);
+            padding-top: 8rem;
+        }
+
+        .features-inner {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .feature-icon-small {
+            width: 40px;
+            height: 40px;
+            background: var(--accent-cyan-dim);
+            border: 1px solid var(--border-accent);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.125rem;
+        }
+
+        .feature-text h4 {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .feature-text p {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+        }
+
+        /* Main Chat Section */
+        .main-chat {
+            position: relative;
+            z-index: 10;
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1.5rem 3rem;
+        }
+
+        .chat-section-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            animation: slideUp 0.8s ease-out;
+            z-index: 20;
+            position: relative;
+        }
+
+        .chat-section-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #00d4ff 0%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+            text-shadow: 0 0 30px rgba(0, 212, 255, 0.2);
+        }
+
+        .chat-section-subtitle {
+            color: #8b949e;
+            font-size: 1.1rem;
+            font-weight: 300;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+
+        /* --- BOTÓN DE REINICIO PERSONALIZADO --- */
+        .clear-chat-btn {
+            margin-top: 1.5rem;
+            background: rgba(0, 212, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            color: #00d4ff;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-family: inherit;
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .clear-chat-btn:hover {
+            background: rgba(0, 212, 255, 0.2);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+            transform: translateY(-2px);
+        }
+        .clear-chat-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .flowise-wrapper {
+            width: 100%;
+            max-width: 900px;
+            height: 650px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-accent);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 
+                var(--shadow-card),
+                var(--shadow-glow),
+                inset 0 1px 0 rgba(255,255,255,0.05);
+            animation: slideUp 0.8s ease-out;
+            position: relative;
+        }
+
+        flowise-fullchatbot {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Footer */
+        .footer {
+            position: relative;
+            z-index: 10;
+            padding: 2rem;
+            text-align: center;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .footer p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-effects">
+        <div class="grid-pattern"></div>
+        <div class="glow-orb cyan"></div>
+        <div class="glow-orb purple"></div>
+    </div>
+
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <a href="#" class="logo">
+                <div class="logo-icon">🛡️</div>
+                <span class="logo-text">AI Compliance Sentinel</span>
+                <span class="nav-tag">AI Assistant</span>
+            </a>
+        </div>
+    </nav>
+
+    <section class="features-strip">
+        <div class="features-inner">
+            <div class="feature-item">
+                <div class="feature-icon-small">💬</div>
+                <div class="feature-text">
+                    <h4>Lenguaje Natural</h4>
+                    <p>Pregunta lo que necesites sin conocer sintaxis técnica de bases de datos.</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon-small">⚡</div>
+                <div class="feature-text">
+                    <h4>Respuestas Instantáneas</h4>
+                    <p>Obtén análisis y telemetría de tus equipos en segundos, no en horas.</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon-small">📊</div>
+                <div class="feature-text">
+                    <h4>Reportes Automáticos</h4>
+                    <p>Genera informes detallados para procesos estrictos de auditoría.</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon-small">🔒</div>
+                <div class="feature-text">
+                    <h4>Seguridad Integral</h4>
+                    <p>Crea políticas para el monitoreo y bloqueo continuo de tu infraestructura.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <main class="main-chat">
+        <div class="chat-section-header">
+            <h2 class="chat-section-title">Terminal de Auditoría</h2>
+            <p class="chat-section-subtitle">Ingresa tus consultas en lenguaje natural para analizar la flota y gestionar políticas en tiempo real.</p>
+            
+            <button class="clear-chat-btn" onclick="reiniciarTerminal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
+                </svg>
+                Reiniciar Auditoría
+            </button>
+        </div>
+
+        <div class="flowise-wrapper">
+            <flowise-fullchatbot></flowise-fullchatbot>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>© 2026 AI Compliance Sentinel. Sistema de Monitoreo de Cumplimiento.</p>
+    </footer>
+
+    <script type="module">
+        import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js"
+        Chatbot.initFull({
+            chatflowid: "d35ec1f6-86d1-4c92-901b-8209f8d8d88b",
+            apiHost: "http://localhost:3000",
+            chatflowConfig: {},
+            theme: {
+                customCSS: `
+                    /* Tipografía global y bordes */
+                    .f-message-container { 
+                        font-family: 'Outfit', -apple-system, sans-serif !important; 
+                    }
+                    .f-chat-window {
+                        border: none !important;
+                        border-radius: 0 !important;
+                        box-shadow: none !important;
+                    }
+
+                    /* Cabecera del Chatbot */
+                    .f-header {
+                        background: linear-gradient(180deg, rgba(0, 212, 255, 0.05) 0%, transparent 100%) !important;
+                        border-bottom: 1px solid rgba(240, 246, 252, 0.1) !important;
+                        padding: 1.25rem 1.5rem !important;
+                    }
+
+                    /* Scrollbar elegante */
+                    ::-webkit-scrollbar { width: 6px; }
+                    ::-webkit-scrollbar-track { background: transparent; }
+                    ::-webkit-scrollbar-thumb { background: rgba(240, 246, 252, 0.1); border-radius: 3px; }
+
+                    /* Burbujas del Bot */
+                    .f-bot-message {
+                        background: rgba(255, 255, 255, 0.04) !important;
+                        border: 1px solid rgba(240, 246, 252, 0.1) !important;
+                        border-bottom-left-radius: 4px !important;
+                        border-radius: 16px 16px 16px 4px !important;
+                        color: #f0f6fc !important;
+                        padding: 0.875rem 1.125rem !important;
+                    }
+
+                    /* Burbujas del Usuario */
+                    .f-user-message {
+                        background: linear-gradient(135deg, #00d4ff 0%, #a855f7 100%) !important;
+                        border-bottom-right-radius: 4px !important;
+                        border-radius: 16px 16px 4px 16px !important;
+                        color: white !important;
+                        font-weight: 500 !important;
+                        padding: 0.875rem 1.125rem !important;
+                    }
+
+                    /* Botones de acción rápida */
+                    .f-starter-prompt {
+                        background: #0d1117 !important;
+                        border: 1px solid rgba(240, 246, 252, 0.1) !important;
+                        color: #8b949e !important;
+                        border-radius: 8px !important;
+                        transition: all 0.2s !important;
+                    }
+                    .f-starter-prompt:hover {
+                        background: rgba(0, 212, 255, 0.15) !important;
+                        border-color: #00d4ff !important;
+                        color: #00d4ff !important;
+                    }
+
+                    /* Área inferior de texto */
+                    .f-text-input-container {
+                        background: #161b22 !important;
+                        border-top: 1px solid rgba(240, 246, 252, 0.1) !important;
+                        padding: 1rem 1.5rem !important;
+                    }
+
+                    /* Caja de Input */
+                    .f-text-input {
+                        background: #0d1117 !important;
+                        border: 1px solid rgba(240, 246, 252, 0.1) !important;
+                        border-radius: 14px !important;
+                        color: #f0f6fc !important;
+                        box-shadow: none !important;
+                    }
+                    .f-text-input:focus {
+                        border-color: #00d4ff !important;
+                        box-shadow: 0 0 20px rgba(0, 212, 255, 0.1) !important;
+                    }
+
+                    .f-send-button svg {
+                        fill: #00d4ff !important;
+                    }
+                `,
+                chatWindow: {
+                    showTitle: true,
+                    showAgentMessages: true,
+                    title: 'Compliance Sentinel',
+                    titleAvatarSrc: 'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/svg/google-messages.svg',
+                    welcomeMessage: '<strong>🛡️ Conexión establecida</strong><br><br>Bienvenido a Compliance Sentinel. Soy tu asistente de IA especializado en seguridad y cumplimiento normativo.<br><br>Puedo ayudarte a:<br>• Consultar el estado de seguridad de tus dispositivos<br>• Identificar vulnerabilidades y parches faltantes<br>• Generar reportes de compliance<br>• Responder preguntas sobre políticas de seguridad<br><br><em>¿En qué puedo ayudarte hoy?</em>',
+                    backgroundColor: 'transparent',
+                    fontSize: 15,
+                    starterPrompts: [
+                        "¿Qué vulnerabilidades críticas hay?",
+                        "Lista puertos abiertos",
+                        "¿Dispositivos sin BitLocker?"
+                    ],
+                    starterPromptFontSize: 13,
+                    clearChatOnReload: true, /* LÍNEA CAMBIADA A TRUE PARA QUE EL BOTÓN FUNCIONE */
+                    renderHTML: true,
+                    botMessage: {
+                        backgroundColor: 'transparent',
+                        textColor: '#f0f6fc',
+                        showAvatar: false 
+                    },
+                    userMessage: {
+                        backgroundColor: 'transparent',
+                        textColor: '#ffffff',
+                        showAvatar: false
+                    },
+                    textInput: {
+                        placeholder: 'Escribe tu consulta de compliance...',
+                        backgroundColor: '#0d1117',
+                        textColor: '#f0f6fc',
+                        sendButtonColor: '#00d4ff',
+                        maxChars: 500,
+                        autoFocus: true,
+                        sendMessageSound: true,
+                        receiveMessageSound: true
+                    },
+                    footer: {
+                        textColor: 'transparent',
+                        text: '',
+                        company: '',
+                        companyLink: ''
+                    }
+                }
+            }
+        })
+    </script>
+
+    <script>
+        function reiniciarTerminal() {
+            localStorage.clear();
+            window.location.reload();
+        }
+    </script>
+</body>
+</html>

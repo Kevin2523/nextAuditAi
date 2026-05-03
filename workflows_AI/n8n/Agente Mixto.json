@@ -1,0 +1,354 @@
+{
+  "name": "Agente Mixto",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ejecutar-fleet",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "b03b9b26-18be-4389-b12f-96e4b591f5f9",
+      "name": "Webhook1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1264,
+        -496
+      ],
+      "webhookId": "4c3fbd44-ee11-416f-b5ff-a26345f92b15"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://host.docker.internal:1337/api/v1/fleet/login",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"email\": \"tucorreo@dominio.com\",\n  \"password\": tucontrasena\"\"\n}",
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "id": "3169f7ff-d09d-4c8c-864f-62aa78666961",
+      "name": "GET TOKEN",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1072,
+        -496
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://host.docker.internal:1337/api/v1/fleet/global/policies",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('GET TOKEN').item.json.token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"name\": \"{{ $('Webhook1').item.json.body.name }}\",\n  \"query\": \"{{ $('Webhook1').item.json.body.query }}\",\n  \"description\": \"{{ $('Webhook1').item.json.body.description }}\",\n  \"resolution\": \"{{ $('Webhook1').item.json.body.resolution }}\",\n  \"platform\": \"{{ $('Webhook1').item.json.body.platform }}\"\n}",
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "id": "6576389b-5fb1-4f4e-ac7e-cce2f18a4df8",
+      "name": "Create Policy Endpoint",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -528,
+        -544
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "932a4965-8f87-4c5c-a955-a9f9af663780",
+      "name": "Respuesta Política",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -320,
+        -544
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://host.docker.internal:1337/api/v1/fleet/hosts",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "status",
+              "value": "online"
+            },
+            {
+              "name": "per_page",
+              "value": "1000"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('GET TOKEN').item.json.token }}"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "id": "7f3ccc91-2eee-4026-b801-3efd00356de3",
+      "name": "Get Hosts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -544,
+        -336
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "https://host.docker.internal:1337/api/v1/fleet/queries/126",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('GET TOKEN').item.json.token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"{{ $('Webhook1').item.json.body.query }}\"\n}",
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "id": "07d89d98-5f62-44bb-993b-4fa0c27c0894",
+      "name": "Update Query Placeholder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -352,
+        -336
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://host.docker.internal:1337/api/v1/fleet/queries/126/run",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('GET TOKEN').item.json.token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"host_ids\": {{ JSON.stringify($('Get Hosts').item.json.hosts.map(h => h.id)) }}\n}",
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "id": "87035e2f-3383-49cd-99bf-6b6a12196513",
+      "name": "Run Query Campaign",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -144,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "3247b720-502d-43f3-8b73-d5e8f627c85f",
+      "name": "Respuesta Query",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        48,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Webhook1').item.json.body.action }}",
+                    "rightValue": "create_policy",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "f836a68a-cad6-4a0f-9ede-f2d105e3b371"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "8c4ce7f8-ea19-4c1c-acfd-01ccd2d2f3bf",
+                    "leftValue": "={{ $('Webhook1').item.json.body.action }}",
+                    "rightValue": "live_query",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -848,
+        -496
+      ],
+      "id": "ee2ac797-4d43-406a-895d-102fc0f667be",
+      "name": "Switch"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "GET TOKEN",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Policy Endpoint": {
+      "main": [
+        [
+          {
+            "node": "Respuesta Política",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Hosts": {
+      "main": [
+        [
+          {
+            "node": "Update Query Placeholder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Query Placeholder": {
+      "main": [
+        [
+          {
+            "node": "Run Query Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Query Campaign": {
+      "main": [
+        [
+          {
+            "node": "Respuesta Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET TOKEN": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Create Policy Endpoint",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Hosts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "5d49273a-b63f-4990-95ef-d052397e1fbe",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b28dac86be42ca470b2d426ee13a19b40db49a908c794954a5ff31e7f0344469"
+  },
+  "id": "oDSPILgPviulIJZ_QzlBS",
+  "tags": []
+}

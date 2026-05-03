@@ -1,0 +1,9 @@
+{
+  "name": "ejecutar_en_fleet",
+  "description": "Ejecuta consultas SQL de Osquery en la flota de dispositivos Windows a través de un webhook de n8n. Recibe un parámetro 'query' que debe ser una consulta SQL válida.",
+  "color": "linear-gradient(rgb(136,145,119), rgb(176,255,217))",
+  "iconSrc": "",
+  "schema": "[{\"id\":0,\"property\":\"query\",\"description\":\"Consulta SQL para Osquery\",\"type\":\"string\",\"required\":false}]",
+  "func": "/* Herramienta de Consultas en Vivo */\nlet fetch;\ntry {\n    fetch = global.fetch || require('node-fetch');\n} catch (e) {\n    console.log(\"No se pudo cargar node-fetch, intentando continuar...\");\n}\n\nconst webhookUrl = \"http://172.30.168.212:5678/webhook/ejecutar-fleet\";\n\nconst options = {\n    method: 'POST',\n    headers: {\n        'Content-Type': 'application/json'\n    },\n    // ETIQUETA SECRETA: \"live_query\"\n    body: JSON.stringify({ query: $query, action: \"live_query\" }) \n};\n\ntry {\n    const response = await fetch(webhookUrl, options);\n    \n    if (response.ok) {\n        const data = await response.text();\n        const dataSegura = data.length > 3000 ? \n            data.substring(0, 3000) + \"... [DATOS TRUNCADOS POR SEGURIDAD]\" : \n            data;\n        return \"Resultado de Fleet: \" + dataSegura;\n    } else {\n        const errorText = await response.text();\n        return `Error en n8n: ${response.status} - ${errorText}`;\n    }\n} catch (error) {\n    return `Error técnico de conexión: ${error.message}`;\n}",
+  "workspaceId": "3c113b86-d70a-467f-9419-a72820084999"
+}

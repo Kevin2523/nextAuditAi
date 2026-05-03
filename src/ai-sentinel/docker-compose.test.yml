@@ -16,6 +16,7 @@ volumes:
   data:
   logs:
   vulndb:
+  instaladores:
 
 services:
 ##################################  AI_Stack  ###############################################################
@@ -56,6 +57,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      ollama:
+        condition: service_started
     environment:
       PORT: ${FLOWISE_PORT}
       DATABASE_SCHEMA: ${DATABASE_SCHEMA}
@@ -65,6 +68,8 @@ services:
       DATABASE_NAME: ${POSTGRES_DB}
       DATABASE_USER: ${POSTGRES_USER}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      NODE_TLS_REJECT_UNAUTHORIZED: 0
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}
     ports:
       - "${FLOWISE_PORT}:${FLOWISE_PORT}"
     volumes:
@@ -172,18 +177,6 @@ services:
       - FLEET_VULNERABILITIES_CURRENT_INSTANCE_CHECKS=${FLEET_VULNERABILITIES_CURRENT_INSTANCE_CHECKS}
       - FLEET_VULNERABILITIES_DATABASES_PATH=${FLEET_VULNERABILITIES_DATABASES_PATH}
       - FLEET_VULNERABILITIES_PERIODICITY=${FLEET_VULNERABILITIES_PERIODICITY}
-      # Optional S3 info
-      # - FLEET_S3_SOFTWARE_INSTALLERS_BUCKET=${FLEET_S3_SOFTWARE_INSTALLERS_BUCKET}
-      # - FLEET_S3_SOFTWARE_INSTALLERS_ACCESS_KEY_ID=${FLEET_S3_SOFTWARE_INSTALLERS_ACCESS_KEY_ID}
-      # - FLEET_S3_SOFTWARE_INSTALLERS_SECRET_ACCESS_KEY=${FLEET_S3_SOFTWARE_INSTALLERS_SECRET_ACCESS_KEY}
-      # - FLEET_S3_SOFTWARE_INSTALLERS_FORCE_S3_PATH_STYLE=${FLEET_S3_SOFTWARE_INSTALLERS_FORCE_S3_PATH_STYLE}
-      # Override FLEET_S3_SOFTWARE_INSTALLERS_ENDPOINT_URL when using a different S3 compatible
-      # object storage backend (such as RustFS) or running S3 locally with localstack.
-      # Leave this blank to use the default S3 service endpoint.
-      # - FLEET_S3_SOFTWARE_INSTALLERS_ENDPOINT_URL=${FLEET_S3_SOFTWARE_INSTALLERS_ENDPOINT_URL}
-      # RustFS users should set FLEET_S3_SOFTWARE_INSTALLERS_REGION to any nonempty value (eg. localhost)
-      # to short-circuit region discovery
-      # - FLEET_S3_SOFTWARE_INSTALLERS_REGION=${FLEET_S3_SOFTWARE_INSTALLERS_REGION}
     ports:
       - "${FLEET_SERVER_PORT}:${FLEET_SERVER_PORT}" # UI/API
     volumes:
@@ -194,8 +187,41 @@ services:
       - ./certs/fleet.key:/fleet/fleet.key:ro
     healthcheck:
       test:
-        ["CMD", "wget", "-qO-", "http://127.0.0.1:${FLEET_SERVER_PORT}/healthz"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
+        ["CMD-SHELL", "wget --no-check-certificate -qO- https://127.0.0.1:${FLEET_SERVER_PORT}/healthz || exit 1"]
+      interval: 2s
+      timeout: 3s
+      retries: 60
     restart: unless-stopped
+
+  fleetctl:
+    build:
+      context: ./fleetctl
+    profiles: ["setup"]
+    restart: "no"
+    depends_on:
+      fleet:
+        condition: service_healthy
+    environment:
+      # Setup Dirección interna hacia Fleet (Docker container)
+      FLEET_ADDRESS: https://fleet:${FLEET_SERVER_PORT}
+
+      # Login
+      FLEET_ORG_NAME: ${FLEET_ORG_NAME}
+      FLEET_ADMIN_NAME: ${FLEET_ADMIN_NAME}
+      FLEET_ADMIN_EMAIL: ${FLEET_ADMIN_EMAIL}
+      FLEET_ADMIN_PASSWORD: ${FLEET_ADMIN_PASSWORD}
+
+      # Enrollment (hosts)
+      FLEET_ENROLL_SECRET: ${FLEET_ENROLL_SECRET}
+      FLEET_ENROLL_URL: https://${FLEET_HOST}:${FLEET_SERVER_PORT}
+
+      # Nombre del instalador de salida
+      INSTALLER_NAME: ${INSTALLER_NAME}
+
+      # Flags para generar instaladores
+      GENERATE_MSI: ${GENERATE_MSI}
+      GENERATE_DEB: ${GENERATE_DEB}
+      GENERATE_RPM: ${GENERATE_RPM}
+      GENERATE_PKG: ${GENERATE_PKG}
+    volumes:
+      - ./instaladores:/out
