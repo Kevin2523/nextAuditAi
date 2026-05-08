@@ -11,6 +11,10 @@ export class FleetTokenService {
     localStorage.setItem('fleet_token', t);
   }
 
+  clearFleetToken() {
+    localStorage.removeItem('fleet_token');
+  }
+
   get n8nToken(): string | null {
     return localStorage.getItem('n8n_token') ?? null;
   }
@@ -20,7 +24,7 @@ export class FleetTokenService {
   }
 
   clearTokens() {
-    localStorage.removeItem('fleet_token');
+    this.clearFleetToken();
     localStorage.removeItem('n8n_token');
   }
 }

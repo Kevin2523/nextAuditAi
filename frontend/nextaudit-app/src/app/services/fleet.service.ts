@@ -1,6 +1,7 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, catchError, forkJoin, map, of, tap, throwError } from 'rxjs';
+import { FleetTokenService } from './fleet-token.service';
 
 export interface FleetHost {
   id: number;
@@ -47,8 +48,10 @@ export interface DeviceRow {
 
 @Injectable({ providedIn: 'root' })
 export class FleetService {
-  private readonly tokenStorageKey = 'fleet_token';
+  private readonly tokenStorage = inject(FleetTokenService);
   private readonly base = '/api/v1/fleet';
+  private readonly bootstrapFleetToken =
+    'g9m7BA/QkUNWaq5aQqqJ+uFxjp83K03zTYC3CpSv1paPh8dE8r72YoQkh44joj7tt1RTjnv/Gtgq1whhp/pISA==';
   private readonly fleetToken = signal<string | null>(this.readStoredToken());
   readonly token = this.fleetToken.asReadonly();
 
@@ -106,7 +109,7 @@ export class FleetService {
       }),
       tap((token) => {
         this.fleetToken.set(token);
-        localStorage.setItem(this.tokenStorageKey, token);
+        this.tokenStorage.setFleetToken(token);
       }),
       tap(() => this.refresh()),
       catchError((error: unknown) => {
@@ -128,7 +131,7 @@ export class FleetService {
     this.authError.set(null);
     this.dataError.set(null);
     this.isOffline.set(false);
-    localStorage.removeItem(this.tokenStorageKey);
+    this.tokenStorage.clearFleetToken();
   }
 
   getHosts() {
@@ -155,7 +158,7 @@ export class FleetService {
 
   refresh() {
     if (!this.fleetToken()) {
-      this.dataError.set('No hay token de Fleet. Ejecuta login primero.');
+      this.dataError.set('No hay token de Fleet configurado.');
       this.loading.set(false);
       this.isOffline.set(true);
       return;
@@ -250,14 +253,19 @@ export class FleetService {
 
   private readStoredToken(): string | null {
     try {
-      return localStorage.getItem(this.tokenStorageKey);
+      this.tokenStorage.setFleetToken(this.bootstrapFleetToken);
+      return this.bootstrapFleetToken;
     } catch {
-      return null;
+      return this.bootstrapFleetToken;
     }
   }
 
   private parseError(error: unknown, fallbackMessage: string): Error {
     if (error instanceof HttpErrorResponse) {
+      if (error.status === 401) {
+        this.logout();
+      }
+
       const apiMessage =
         typeof error.error === 'string'
           ? error.error
