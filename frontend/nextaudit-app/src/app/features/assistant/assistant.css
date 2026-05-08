@@ -1,0 +1,13 @@
+:host ::ng-deep .chat-html p { margin-bottom: 0.5rem; }
+:host ::ng-deep .chat-html p:last-child { margin-bottom: 0; }
+:host ::ng-deep .chat-html strong { color: #0F172A; font-weight: 700; }
+:host ::ng-deep .chat-html code {
+  background-color: #F1F5F9;
+  color: #334155;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-family: inherit;
+}
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

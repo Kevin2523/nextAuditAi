@@ -1,0 +1,112 @@
+<div class="saas-card overflow-hidden">
+  <div class="p-5 border-b border-[#E2E8F0] flex flex-wrap gap-4 items-center justify-between bg-white">
+    <div class="relative w-full sm:w-72">
+      <svg class="w-4 h-4 absolute left-3 top-3 text-[#94A3B8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input
+        type="text"
+        placeholder="Filtrar por nombre o SO..."
+        [value]="query()"
+        (input)="onFilter($event)"
+        class="w-full border border-[#E2E8F0] rounded-lg pl-9 pr-3 py-2 text-[13px] bg-[#F8FAFC] focus:bg-white focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors"
+      >
+    </div>
+    <div class="flex gap-2 items-center">
+      <span *ngIf="fleet.isOffline()" class="text-[12px] text-[#92400E] bg-[#FEF3C7] border border-[#FDE68A] rounded-full px-2.5 py-1">Fleet Offline</span>
+      <button (click)="toggleFilters()" class="px-4 py-2 border border-[#E2E8F0] text-[#475569] text-[13px] font-semibold rounded-lg hover:bg-[#F8FAFC] transition-colors flex items-center gap-2">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        Filtros
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="filtersOpen()" class="px-5 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0] flex flex-wrap gap-2 items-center">
+    <span class="text-[12px] font-semibold text-[#64748B] uppercase">Estado</span>
+    <button
+      *ngFor="let status of statuses"
+      (click)="setStatus(status)"
+      class="px-3 py-1.5 rounded-lg border text-[12px] font-semibold transition-colors"
+      [class.bg-primary-600]="selectedStatus() === status"
+      [class.text-white]="selectedStatus() === status"
+      [class.border-primary-600]="selectedStatus() === status"
+      [class.bg-white]="selectedStatus() !== status"
+      [class.text-[#475569]]="selectedStatus() !== status"
+      [class.border-[#E2E8F0]]="selectedStatus() !== status"
+    >
+      {{status}}
+    </button>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-left border-collapse">
+      <thead>
+        <tr class="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+          <th class="py-3 px-5 text-[12px] font-semibold text-[#64748B] tracking-wider uppercase">Nombre del Dispositivo</th>
+          <th class="py-3 px-5 text-[12px] font-semibold text-[#64748B] tracking-wider uppercase">Sistema Operativo</th>
+          <th class="py-3 px-5 text-[12px] font-semibold text-[#64748B] tracking-wider uppercase">Estado de Seguridad</th>
+          <th class="py-3 px-5 text-[12px] font-semibold text-[#64748B] tracking-wider uppercase">Ultima Auditoria</th>
+          <th class="py-3 px-5 text-[12px] font-semibold text-[#64748B] tracking-wider uppercase text-right">Acciones</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-[#E2E8F0]">
+        <ng-container *ngFor="let device of devices()">
+        <tr class="hover:bg-[#F8FAFC] transition-colors group">
+          <td class="py-3 px-5">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded shrink-0 bg-surface border border-border flex items-center justify-center">
+                <svg *ngIf="device.osFamily === 'windows'" class="w-4 h-4 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></svg>
+                <svg *ngIf="device.osFamily === 'ubuntu' || device.osFamily === 'linux'" class="w-4 h-4 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.5"/><path d="M12 3v3"/><path d="M12 18v3"/><path d="M3 12h3"/><path d="M18 12h3"/></svg>
+                <svg *ngIf="device.osFamily === 'mac'" class="w-4 h-4 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 13c0 4-2 7-4 7s-4-3-4-7 2-7 4-7 4 3 4 7z"/><path d="M12 6c0-2 1-3 3-3"/></svg>
+                <svg *ngIf="device.osFamily === 'other'" class="w-4 h-4 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
+              </div>
+              <span class="text-[14px] font-bold text-[#0F172A] font-mono">{{device.name}}</span>
+            </div>
+          </td>
+          <td class="py-3 px-5 text-[13px] text-[#475569]">{{device.os}}</td>
+          <td class="py-3 px-5">
+            <span *ngIf="device.status==='Protegido'" class="inline-flex flex-shrink-0 items-center justify-center rounded-full bg-[#ECFDF5] px-2.5 py-1 text-[12px] font-medium text-[#10B981] border border-[#A7F3D0]">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#10B981] mr-1.5"></span> Protegido
+            </span>
+            <span *ngIf="device.status==='Riesgo'" class="inline-flex flex-shrink-0 items-center justify-center rounded-full bg-[#FEF2F2] px-2.5 py-1 text-[12px] font-medium text-[#EF4444] border border-[#FECACA]">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#EF4444] mr-1.5 animate-pulse"></span> Riesgo Detectado
+            </span>
+            <span *ngIf="device.status==='Offline'" class="inline-flex flex-shrink-0 items-center justify-center rounded-full bg-[#F1F5F9] px-2.5 py-1 text-[12px] font-medium text-[#64748B] border border-[#CBD5E1]">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#64748B] mr-1.5"></span> Offline
+            </span>
+          </td>
+          <td class="py-3 px-5 text-[13px] text-[#64748B]">{{device.auditDate}}</td>
+          <td class="py-3 px-5 text-right space-x-2">
+            <button (click)="toggleDetails(device.id)" class="text-[13px] font-semibold text-primary-600 hover:text-primary-800 transition-colors">
+              {{ expandedDeviceId() === device.id ? 'Ocultar' : 'Detalles' }}
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="expandedDeviceId() === device.id" class="bg-[#F8FAFC]">
+          <td colspan="5" class="px-5 py-4">
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 text-[13px]">
+              <div>
+                <p class="text-[11px] uppercase font-semibold text-[#94A3B8]">Hostname</p>
+                <p class="font-mono text-[#0F172A]">{{device.hostname}}</p>
+              </div>
+              <div>
+                <p class="text-[11px] uppercase font-semibold text-[#94A3B8]">Plataforma</p>
+                <p class="text-[#0F172A]">{{device.platform}}</p>
+              </div>
+              <div>
+                <p class="text-[11px] uppercase font-semibold text-[#94A3B8]">Inscripcion</p>
+                <p class="text-[#0F172A]">{{device.enrolledAt}}</p>
+              </div>
+              <div>
+                <p class="text-[11px] uppercase font-semibold text-[#94A3B8]">Criticas</p>
+                <p class="text-[#0F172A]">{{device.criticalVulnerabilities}}</p>
+              </div>
+            </div>
+          </td>
+        </tr>
+        </ng-container>
+        <tr *ngIf="devices().length === 0">
+          <td colspan="5" class="py-8 px-5 text-center text-[13px] text-[#94A3B8]">No hay dispositivos para mostrar.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

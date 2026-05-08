@@ -1,0 +1,136 @@
+<div class="flex h-screen overflow-hidden bg-[#F8FAFC]">
+
+  <!-- ============================================================
+       SIDEBAR SAAS
+  ============================================================ -->
+  <aside class="flex flex-col bg-white border-r border-[#E2E8F0] w-[260px] shrink-0 z-50">
+    
+    <!-- Brand -->
+    <div class="flex items-center gap-3 px-6 h-[72px] shrink-0 border-b border-[#F1F5F9]">
+      <!-- Logotipo Minimalista -->
+      <div class="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center shadow-sm">
+        <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+      <div>
+        <span class="font-display text-[17px] font-extrabold text-[#0F172A] tracking-tight">NextAudit</span>
+        <span class="font-display text-[17px] font-extrabold text-primary-600 tracking-tight ml-0.5">AI</span>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 overflow-y-auto py-5 px-4 space-y-6">
+      <div *ngFor="let section of sections">
+        <p class="text-[11px] font-bold tracking-widest text-[#94A3B8] uppercase px-3 mb-3">{{section}}</p>
+        
+        <a
+          *ngFor="let item of getItemsBySection(section)"
+          [routerLink]="item.route"
+          routerLinkActive="nav-active"
+          class="nav-item group flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[#475569] text-[14px] font-medium transition-all duration-200 hover:bg-[#F1F5F9] hover:text-[#0F172A] mb-1"
+        >
+          <!-- Icons -->
+          <div class="text-[#64748B] transition-colors group-hover:text-primary-600">
+            <!-- Layout Dashboard -->
+            <svg *ngIf="item.icon==='layout-dashboard'" class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+            <!-- Laptop (Inventory) -->
+            <svg *ngIf="item.icon==='laptop'" class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
+            <!-- Activity -->
+            <svg *ngIf="item.icon==='activity'" class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <!-- Bot (Assistant) -->
+            <svg *ngIf="item.icon==='bot'" class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+            <!-- Book (Help) -->
+            <svg *ngIf="item.icon==='book'" class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          </div>
+          <span>{{item.label}}</span>
+        </a>
+      </div>
+    </nav>
+
+    <!-- Bottom Account (Minimalist) -->
+    <div class="border-t border-[#F1F5F9] p-4 shrink-0">
+      <div class="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-[#F1F5F9] cursor-pointer transition-colors">
+        <img src="https://ui-avatars.com/api/?name=Admin+UTP&background=2563EB&color=fff&rounded=true" alt="User" class="w-9 h-9 rounded-full shadow-sm" />
+        <div class="overflow-hidden">
+          <p class="text-[14px] font-semibold text-[#0F172A] leading-tight truncate">Administrador</p>
+          <p class="text-[12px] text-[#64748B] leading-tight">Soporte UTP</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============================================================
+       MAIN AREA
+  ============================================================ -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+    <!-- Top Bar Header -->
+    <header class="h-[72px] bg-white border-b border-[#E2E8F0] flex items-center justify-between px-8 shrink-0 relative z-40">
+      
+      <!-- Global Search -->
+      <div class="flex-1 max-w-lg">
+        <div class="relative flex items-center">
+          <svg class="w-5 h-5 absolute left-3.5 text-[#94A3B8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" (input)="updateGlobalQuery($event)" (keydown.enter)="runGlobalSearch()" placeholder="Buscar dispositivos, reportes o alertas..." class="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-11 pr-4 py-2.5 text-[14px] font-body text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all placeholder:text-[#94A3B8]">
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4 ml-6">
+        <!-- Notificaciones -->
+        <div class="relative">
+          <button (click)="toggleNotifications()" class="relative w-10 h-10 rounded-full border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A] transition-colors">
+            <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+            <span *ngIf="auditNotifications.unreadCount() > 0" class="absolute -top-1 -right-1 min-w-5 h-5 rounded-full bg-red-500 border border-white text-white text-[10px] font-bold flex items-center justify-center px-1">
+              {{auditNotifications.unreadCount()}}
+            </span>
+          </button>
+
+          <div *ngIf="notificationsOpen()" class="absolute right-0 top-12 w-[360px] bg-white border border-[#E2E8F0] rounded-xl shadow-heavy z-50 overflow-hidden">
+            <div class="px-4 py-3 border-b border-[#E2E8F0] flex items-center justify-between gap-3">
+              <div>
+                <p class="text-[13px] font-bold text-[#0F172A]">Notificaciones de auditoria</p>
+                <p class="text-[11px] text-[#64748B]">{{auditNotifications.unreadCount()}} pendientes</p>
+              </div>
+              <button *ngIf="auditNotifications.systemPermission() === 'default'" (click)="enableSystemNotifications()" class="text-[11px] font-bold text-primary-600 hover:text-primary-800">
+                Activar sistema
+              </button>
+              <button *ngIf="auditNotifications.unreadCount() > 0" (click)="markNotificationsRead()" class="text-[11px] font-bold text-[#64748B] hover:text-[#0F172A]">
+                Marcar leidas
+              </button>
+            </div>
+
+            <div class="max-h-[320px] overflow-y-auto">
+              <button
+                *ngFor="let item of auditNotifications.notifications()"
+                (click)="openNotification(item)"
+                class="w-full text-left px-4 py-3 border-b border-[#F1F5F9] hover:bg-[#F8FAFC] transition-colors"
+                [class.bg-[#FEF2F2]]="!item.read && item.severity === 'critical'"
+              >
+                <div class="flex items-start gap-3">
+                  <span class="mt-1 w-2 h-2 rounded-full shrink-0" [class.bg-red-500]="item.severity === 'critical'" [class.bg-[#F59E0B]]="item.severity === 'warning'"></span>
+                  <div>
+                    <p class="text-[13px] font-bold text-[#0F172A]">{{item.title}}</p>
+                    <p class="text-[12px] text-[#475569] leading-snug">{{item.message}}</p>
+                  </div>
+                </div>
+              </button>
+
+              <p *ngIf="auditNotifications.notifications().length === 0" class="px-4 py-8 text-center text-[13px] text-[#94A3B8]">
+                Sin problemas detectados en auditorias.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="flex-1 overflow-y-auto bg-[#F8FAFC] p-8">
+      <div class="mb-6 flex items-center justify-between">
+        <h1 class="font-display text-2xl font-extrabold text-[#0F172A] tracking-tight">{{currentTitle}}</h1>
+      </div>
+      
+      <router-outlet />
+    </main>
+  </div>
+
+</div>

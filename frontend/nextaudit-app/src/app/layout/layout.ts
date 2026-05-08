@@ -1,0 +1,86 @@
+import { Component, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
+import { AuditNotification, AuditNotificationService } from '../services/audit-notification.service';
+
+interface NavItem {
+  label: string;
+  route: string;
+  icon: string;
+  section: string;
+}
+
+@Component({
+  selector: 'app-layout',
+  standalone: true,
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  templateUrl: './layout.html',
+  styleUrl: './layout.css'
+})
+export class Layout {
+  protected readonly auditNotifications = inject(AuditNotificationService);
+  collapsed = false;
+  currentTitle = 'Dashboard';
+  readonly globalQuery = signal('');
+  readonly notificationsOpen = signal(false);
+
+  sections = ['MENÚ PRINCIPAL', 'CONFIGURACIÓN Y AYUDA'];
+
+  navItems: NavItem[] = [
+    { label: 'Dashboard',             route: '/dashboard',     icon: 'layout-dashboard', section: 'MENÚ PRINCIPAL' },
+    { label: 'Inventario de Dispositivos', route: '/inventory',     icon: 'laptop',           section: 'MENÚ PRINCIPAL' },
+    { label: 'Registro de Actividad', route: '/history',       icon: 'activity',         section: 'MENÚ PRINCIPAL' },
+    { label: 'Asistente Virtual',     route: '/assistant',     icon: 'bot',              section: 'MENÚ PRINCIPAL' },
+    { label: 'Centro de Ayuda',       route: '/help-center',   icon: 'book',             section: 'CONFIGURACIÓN Y AYUDA' },
+  ];
+
+  constructor(private router: Router) {
+    this.router.events
+      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+      .subscribe(e => {
+        const item = this.navItems.find(n => e.urlAfterRedirects.startsWith(n.route));
+        if (item) this.currentTitle = item.label;
+      });
+  }
+
+  getItemsBySection(section: string): NavItem[] {
+    return this.navItems.filter(i => i.section === section);
+  }
+
+  updateGlobalQuery(event: Event) {
+    const target = event.target as HTMLInputElement;
+    this.globalQuery.set(target.value || '');
+  }
+
+  runGlobalSearch() {
+    const query = this.globalQuery().trim();
+    if (!query) return;
+
+    this.router.navigate(['/inventory'], { queryParams: { q: query } });
+  }
+
+  toggleNotifications() {
+    this.notificationsOpen.update((open) => !open);
+  }
+
+  openNotification(notification: AuditNotification) {
+    this.auditNotifications.markAsRead(notification.id);
+    this.notificationsOpen.set(false);
+
+    if (notification.source === 'fleet') {
+      this.router.navigate(['/inventory']);
+      return;
+    }
+
+    this.router.navigate(['/history']);
+  }
+
+  markNotificationsRead() {
+    this.auditNotifications.markAllAsRead();
+  }
+
+  enableSystemNotifications() {
+    this.auditNotifications.requestSystemPermission();
+  }
+}
