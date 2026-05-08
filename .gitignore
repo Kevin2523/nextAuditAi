@@ -8,6 +8,8 @@
 *.sops
 **/*.crt
 **/*.key
+**/*.crt.*.bak
+**/*.key.*.bak
 
 # Python
 __pycache__/

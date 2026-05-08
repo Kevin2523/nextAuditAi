@@ -71,6 +71,9 @@ services:
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
       NODE_TLS_REJECT_UNAUTHORIZED: 0
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}
+      # Dev local: permite que las tools llamen servicios internos del compose,
+      # por ejemplo http://n8n:5678/webhook/...
+      HTTP_SECURITY_CHECK: ${FLOWISE_HTTP_SECURITY_CHECK}
     ports:
       - "${FLOWISE_PORT}:${FLOWISE_PORT}"
     volumes:
