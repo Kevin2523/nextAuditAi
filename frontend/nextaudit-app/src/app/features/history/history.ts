@@ -28,7 +28,7 @@ export class History {
       `Estado: ${log.estado_resolucion}`,
       `Fecha: ${log.timestamp}`,
       '',
-      'Este certificado se genera exclusivamente con la ejecucion real registrada por n8n.',
+      'Este certificado se genera con la actividad registrada por la plataforma.',
     ].join('\n');
 
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });

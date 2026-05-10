@@ -50,8 +50,6 @@ export interface DeviceRow {
 export class FleetService {
   private readonly tokenStorage = inject(FleetTokenService);
   private readonly base = '/api/v1/fleet';
-  private readonly bootstrapFleetToken =
-    'g9m7BA/QkUNWaq5aQqqJ+uFxjp83K03zTYC3CpSv1paPh8dE8r72YoQkh44joj7tt1RTjnv/Gtgq1whhp/pISA==';
   private readonly fleetToken = signal<string | null>(this.readStoredToken());
   readonly token = this.fleetToken.asReadonly();
 
@@ -103,7 +101,7 @@ export class FleetService {
       map((response) => {
         const token = response?.token?.trim();
         if (!token) {
-          throw new Error('Fleet no devolvio un token valido.');
+          throw new Error('No se pudo validar la sesion.');
         }
         return token;
       }),
@@ -113,7 +111,7 @@ export class FleetService {
       }),
       tap(() => this.refresh()),
       catchError((error: unknown) => {
-        const parsed = this.parseError(error, 'No se pudo autenticar en Fleet.');
+        const parsed = this.parseError(error, 'No se pudo iniciar sesion.');
         this.authError.set(parsed.message);
         return throwError(() => parsed);
       }),
@@ -140,7 +138,7 @@ export class FleetService {
       .pipe(
         map((response) => this.normalizeFleetCollection(response, 'hosts')),
         catchError((error: unknown) =>
-          throwError(() => this.parseError(error, 'No fue posible cargar hosts de Fleet.')),
+          throwError(() => this.parseError(error, 'No fue posible cargar los dispositivos.')),
         ),
       );
   }
@@ -151,14 +149,14 @@ export class FleetService {
       .pipe(
         map((response) => this.normalizeFleetCollection(response, 'vulnerabilities')),
         catchError((error: unknown) =>
-          throwError(() => this.parseError(error, 'No fue posible cargar vulnerabilidades de Fleet.')),
+          throwError(() => this.parseError(error, 'No fue posible cargar las vulnerabilidades.')),
         ),
       );
   }
 
   refresh() {
     if (!this.fleetToken()) {
-      this.dataError.set('No hay token de Fleet configurado.');
+      this.dataError.set('No hay una sesion activa configurada.');
       this.loading.set(false);
       this.isOffline.set(true);
       return;
@@ -181,7 +179,7 @@ export class FleetService {
       this.vulnerabilities.set(vulnerabilities.data);
       this.isOffline.set(!hosts.ok);
       if (!hosts.ok || !vulnerabilities.ok) {
-        this.dataError.set('Fleet respondio con errores parciales. Revisa conectividad o token.');
+        this.dataError.set('La plataforma respondio con errores parciales. Revisa la conexion o la sesion.');
       }
       this.loading.set(false);
     });
@@ -252,12 +250,7 @@ export class FleetService {
   }
 
   private readStoredToken(): string | null {
-    try {
-      this.tokenStorage.setFleetToken(this.bootstrapFleetToken);
-      return this.bootstrapFleetToken;
-    } catch {
-      return this.bootstrapFleetToken;
-    }
+    return this.tokenStorage.fleetToken;
   }
 
   private parseError(error: unknown, fallbackMessage: string): Error {

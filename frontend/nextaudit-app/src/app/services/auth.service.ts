@@ -20,10 +20,32 @@ export class AuthService {
   private readonly tokenService = inject(FleetTokenService);
   private readonly fleetService = inject(FleetService);
 
-  loginAll(credentials: LoginAllRequest): Observable<unknown> {
+  private readonly CREDENTIALS: LoginAllRequest = {
+    fleet: {
+      email: 'kjmg2325@gmail.com',
+      password: '@Stayhumble521',
+    },
+    n8n: {
+      emailOrLdapLoginId: 'kjmg2325@gmail.com',
+      password: 'Vinke521',
+    },
+  };
+
+  loginAll(credentials: LoginAllRequest = this.CREDENTIALS): Observable<unknown> {
     return forkJoin({
       fleet: this.loginFleet(credentials.fleet).pipe(catchError(() => of(null))),
       n8n: this.loginN8n(credentials.n8n).pipe(catchError(() => of(null))),
+    });
+  }
+
+  autoLogin(): void {
+    // Only login if we don't have tokens or if we want to ensure fresh ones
+    this.loginAll().subscribe({
+      next: (res) => {
+        console.log('NextAudit Auto-login successful', res);
+        this.fleetService.refresh();
+      },
+      error: (err) => console.error('NextAudit Auto-login failed', err),
     });
   }
 

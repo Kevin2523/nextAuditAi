@@ -20,21 +20,21 @@ export class HelpCenter {
   readonly categories: HelpCategory[] = [
     {
       title: 'Primeros Pasos',
-      desc: 'Sincronizacion en la nube y configuracion de tu primer laboratorio.',
+      desc: 'Conoce las secciones principales y revisa el estado inicial de la plataforma.',
       article:
-        'Conecta Fleet desde la consola de acceso, valida que el token quede activo y revisa el inventario. La pantalla no rellena hosts de ejemplo: si Fleet no responde, veras el estado offline.',
+        'Ingresa a la plataforma, revisa el Dashboard y confirma que el inventario muestre los dispositivos registrados. Si una seccion no tiene informacion, puede que aun no existan datos disponibles o que el administrador deba revisar la configuracion.',
     },
     {
-      title: 'Motor de Autosanacion',
-      desc: 'Como funciona la tecnologia de analisis para auto-reparar la flota.',
+      title: 'Seguimiento de Eventos',
+      desc: 'Como revisar acciones correctivas y resultados recientes.',
       article:
-        'Las acciones de remediacion deben nacer de ejecuciones reales en n8n. NextAudit muestra esas ejecuciones en Registro de Actividad y evita botones de reparacion cuando no existe un flujo conectado.',
+        'Los eventos y acciones correctivas se consultan desde Registro de Actividad. Usa esta seccion para conocer el dispositivo afectado, el tipo de suceso, el resultado y la fecha del registro.',
     },
     {
       title: 'Auditorias y Reportes',
       desc: 'Interpretar las puntuaciones de riesgo y descargables.',
       article:
-        'El reporte operativo se genera con hosts reales de Fleet, vulnerabilidades activas y ejecuciones reales de n8n. Si una fuente esta offline, el reporte lo refleja con los datos disponibles.',
+        'El reporte operativo se genera con la informacion disponible en la plataforma. Si algun dato no aparece, el reporte mantendra solo la informacion que este disponible al momento de la descarga.',
     },
     {
       title: 'Alertas Criticas',

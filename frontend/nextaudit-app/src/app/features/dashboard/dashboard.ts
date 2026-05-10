@@ -35,7 +35,7 @@ export class Dashboard {
     {
       label: 'Salud de Flota',
       value: `${this.fleet.totalHosts()}`,
-      trend: this.fleet.isOffline() ? 'Fleet offline' : `${this.fleet.onlineHosts()} conectados`,
+      trend: this.fleet.isOffline() ? 'Datos no disponibles' : `${this.fleet.onlineHosts()} conectados`,
       up: !this.fleet.isOffline(),
       icon: 'laptop',
       color: 'success',
@@ -51,7 +51,7 @@ export class Dashboard {
     {
       label: 'Remediaciones Exitosas',
       value: `${this.successfulRemediations()}`,
-      trend: 'Sincronizado con n8n',
+      trend: 'Actividad sincronizada',
       up: true,
       icon: 'calendar',
       color: 'info',

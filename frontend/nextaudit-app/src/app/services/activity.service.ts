@@ -89,7 +89,7 @@ export class ActivityService {
   private fetchExecutionsFrom(index: number): Observable<N8nExecution[]> {
     const endpoint = this.executionEndpoints[index];
     if (!endpoint) {
-      return throwError(() => new Error('No fue posible consultar ejecuciones de n8n.'));
+      return throwError(() => new Error('No fue posible consultar la actividad registrada.'));
     }
 
     return this.http.get<unknown>(endpoint).pipe(

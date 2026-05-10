@@ -1,146 +1,164 @@
-# Guia para configurar el frontend con credenciales locales
+# Manual de usuario de NextAudit AI
 
-Esta guia explica que debe cambiar cada colaborador para que el frontend de NextAudit AI pueda conectarse a su stack local de Fleet y n8n.
+Este manual explica como utilizar la plataforma NextAudit AI para revisar el estado de seguridad de los dispositivos, consultar actividad reciente, descargar reportes y dar seguimiento a eventos importantes.
 
-## 1. Levantar el stack local
+La guia esta dirigida a usuarios operativos, administradores, personal de soporte y responsables de auditoria de cualquier organizacion donde se implemente el sistema.
 
-Desde la raiz del repo, levanta los servicios de desarrollo de `src/ai-sentinel` usando tu archivo `.env` local.
+## 1. Acceso a la plataforma
 
-Verifica que estos servicios respondan:
+1. Abre la direccion web entregada por el administrador del sistema.
+2. El sistema iniciara sesion de forma automatica utilizando las credenciales configuradas internamente.
+3. Verifica que se muestre el panel principal de NextAudit AI de forma inmediata.
 
-- Fleet: `https://localhost:1337`
-- n8n: `http://localhost:5678`
-- Frontend Angular: `http://localhost:4200`
+El acceso esta automatizado para garantizar una experiencia fluida. Si la plataforma no carga la informacion de forma automatica, verifica tu conexion a internet o solicita apoyo al administrador.
 
-## 2. Configurar Fleet para el frontend
+## 2. Navegacion general
 
-El frontend consume Fleet mediante el proxy Angular:
+La pantalla principal tiene un menu lateral con las secciones disponibles:
 
-```txt
-/api/v1/fleet/* -> https://localhost:1337/api/v1/fleet/*
-```
+- **Dashboard**: muestra el resumen general del estado de seguridad.
+- **Inventario de Dispositivos**: permite consultar los equipos registrados.
+- **Registro de Actividad**: muestra eventos, acciones y resultados recientes.
+- **Asistente Virtual**: permite realizar consultas guiadas sobre el estado del sistema.
+- **Centro de Ayuda**: contiene material de apoyo para el uso de la plataforma.
 
-Si tu Fleet no corre en `https://localhost:1337`, cambia el target en:
+En la parte superior tambien hay una barra de busqueda. Puedes escribir el nombre de un dispositivo, reporte o alerta para encontrar informacion rapidamente.
 
-```txt
-frontend/nextaudit-app/proxy.conf.json
-```
+## 3. Dashboard
 
-## 3. Crear o conseguir un token de Fleet
+El Dashboard es la vista inicial de la plataforma. Su objetivo es ofrecer una lectura rapida del estado general de la organizacion.
 
-Cada colaborador debe usar su propio token de Fleet. No se debe commitear un token personal.
+En esta seccion puedes revisar:
 
-Opcion recomendada:
+- **Puntuacion de cumplimiento**: indica el nivel general de cumplimiento observado.
+- **Salud de la flota**: muestra cuantos dispositivos estan registrados y cuantos estan conectados.
+- **Incidentes detectados**: resume riesgos o vulnerabilidades activas.
+- **Remediaciones exitosas**: indica acciones correctivas completadas correctamente.
+- **Rendimiento semanal**: muestra la evolucion de la seguridad durante los ultimos dias.
+- **Resumen operativo**: presenta los eventos recientes mas importantes.
 
-1. Entra a Fleet en `https://localhost:1337`.
-2. Inicia sesion con tu usuario administrador.
-3. Ve a tu perfil.
-4. Genera o copia tu API token.
-5. Usa ese token para desarrollo local.
+Para descargar un reporte, selecciona **Descargar Reporte**. El sistema generara un archivo con la informacion operativa disponible en ese momento.
 
-Opcion de desarrollo local con MySQL:
+## 4. Inventario de dispositivos
 
-1. Identifica el usuario admin:
+La seccion **Inventario de Dispositivos** permite consultar los equipos monitoreados por la plataforma.
 
-```powershell
-docker exec ai-sentinel-mysql-1 mysql -ufleet -pfleet123 fleet -e "select id, name, email, global_role from users;"
-```
+La tabla muestra:
 
-2. Crea un token de sesion para ese usuario:
+- Nombre del dispositivo.
+- Sistema operativo.
+- Estado de seguridad.
+- Fecha de la ultima auditoria.
+- Acciones disponibles.
 
-```powershell
-$bytes = New-Object byte[] 64
-$rng = New-Object System.Security.Cryptography.RNGCryptoServiceProvider
-$rng.GetBytes($bytes)
-$token = [Convert]::ToBase64String($bytes)
-docker exec ai-sentinel-mysql-1 mysql -ufleet -pfleet123 fleet -e "insert into sessions (user_id, ``key``) values (1, '$token');"
-$token
-```
+### Estados de seguridad
 
-3. Prueba el token:
+- **Protegido**: el dispositivo no presenta riesgos criticos visibles en la plataforma.
+- **Riesgo Detectado**: el dispositivo requiere revision o seguimiento.
+- **Offline**: el dispositivo no esta reportando informacion actualmente.
 
-```powershell
-$env:NODE_TLS_REJECT_UNAUTHORIZED='0'
-node -e "const token='TU_TOKEN'; fetch('https://localhost:1337/api/v1/fleet/hosts',{headers:{authorization:'Bearer '+token}}).then(async r=>{console.log(r.status); console.log(await r.text())})"
-```
+### Buscar dispositivos
 
-Debe responder `200`.
+Usa el campo **Filtrar por nombre o SO** para encontrar equipos por nombre o sistema operativo. La lista se actualizara con los resultados que coincidan con tu busqueda.
 
-## 4. Usar el token en el frontend
+### Usar filtros
 
-Para desarrollo local, el token usado por el interceptor vive en `localStorage` con esta llave:
+Selecciona **Filtros** para mostrar las opciones de filtrado por estado. Esto ayuda a revisar rapidamente equipos protegidos, en riesgo u offline.
 
-```txt
-fleet_token
-```
+### Ver detalles de un dispositivo
 
-Puedes ponerlo desde DevTools:
+En la columna **Acciones**, selecciona **Detalles** para ver informacion adicional del equipo, como hostname, plataforma, fecha de inscripcion y cantidad de vulnerabilidades criticas.
 
-```js
-localStorage.setItem('fleet_token', 'TU_TOKEN');
-location.reload();
-```
+## 5. Registro de actividad
 
-Si el proyecto tiene un token fijo temporal en `FleetService`, reemplazalo localmente por tu token y evita subir ese cambio con credenciales personales.
+La seccion **Registro de Actividad** muestra eventos recientes, acciones ejecutadas y resultados asociados a los dispositivos.
 
-Archivo relacionado:
+Aqui puedes revisar:
 
-```txt
-frontend/nextaudit-app/src/app/services/fleet.service.ts
-```
+- Tipo de suceso.
+- Dispositivo afectado.
+- Resultado de la accion.
+- Fecha y hora del evento.
+- Actividad reciente ordenada cronologicamente.
 
-## 5. Configurar n8n si vas a usar actividad
+Cuando una accion se complete correctamente, puede aparecer la opcion **Descargar Certificado de Resolucion**. Usa este certificado como evidencia de atencion del evento.
 
-El frontend intenta consultar n8n mediante:
+Si un evento aparece como fallido o pendiente, debe ser revisado por el equipo responsable antes de marcarlo como resuelto.
 
-```txt
-/api/n8n/*
-/rest/*
-```
+## 6. Asistente Virtual
 
-El proxy esta en:
+El **Asistente Virtual** permite hacer consultas sobre la informacion disponible en la plataforma.
 
-```txt
-frontend/nextaudit-app/proxy.conf.json
-```
+Puedes usarlo para:
 
-Si usas autenticacion de n8n, el token se guarda en:
+- Preguntar por el estado de un dispositivo.
+- Consultar incidentes recientes.
+- Solicitar orientacion sobre eventos detectados.
+- Revisar recomendaciones generales de seguimiento.
 
-```txt
-n8n_token
-```
+Escribe tu consulta en el campo de texto y presiona el boton de enviar. Tambien puedes usar las sugerencias rapidas que aparecen sobre la barra de escritura.
 
-## 6. Limpiar tokens cuando algo falle
+Si la opcion de voz esta disponible, puedes activar el microfono para dictar una consulta. Al terminar, revisa la respuesta antes de tomar una decision operativa.
 
-Si Fleet devuelve `401`, limpia el token local y vuelve a generar uno:
+## 7. Notificaciones
 
-```js
-localStorage.removeItem('fleet_token');
-location.reload();
-```
+El icono de notificaciones se encuentra en la parte superior derecha.
 
-## 7. Ejecutar frontend
+Desde ahi puedes:
 
-Desde `frontend/nextaudit-app`:
+- Ver alertas pendientes.
+- Abrir una alerta para ir a la seccion relacionada.
+- Marcar notificaciones como leidas.
+- Activar notificaciones del sistema si el navegador lo solicita.
 
-```powershell
-npm.cmd install
-npm.cmd start
-```
+Las notificaciones ayudan a priorizar eventos que requieren revision. Una alerta critica debe atenderse antes que una alerta informativa.
 
-Abre:
+## 8. Centro de ayuda
 
-```txt
-http://localhost:4200/inventory
-```
+El **Centro de Ayuda** reune articulos y orientaciones de uso de la plataforma.
 
-Si Fleet esta autenticado correctamente, el inventario debe listar los hosts reales de Fleet.
+Puedes buscar articulos desde el campo de busqueda o seleccionar una categoria disponible. Esta seccion debe utilizarse como referencia para resolver dudas operativas antes de escalar un caso al administrador.
 
-## 8. Valores que cada colaborador debe revisar
+## 9. Buenas practicas de uso
 
-- `frontend/nextaudit-app/proxy.conf.json`: URLs locales de Fleet y n8n.
-- `fleet_token`: token API o sesion de Fleet en `localStorage`.
-- `n8n_token`: token de n8n si aplica.
-- Certificados locales de Fleet: deben coincidir con el host usado (`localhost`, `fleet.local` o IP local).
-- Scripts en `src/ai-sentinel/tools`: ajustar dominio, enroll secret y rutas si se genera un instalador propio.
+- Revisa el Dashboard al iniciar la jornada.
+- Atiende primero los dispositivos con **Riesgo Detectado**.
+- Usa los filtros para priorizar equipos offline o con alertas.
+- Descarga reportes cuando necesites evidencias para reuniones, auditorias o seguimiento de la organizacion.
+- No compartas tu usuario ni tu contrasena.
+- Cierra la sesion cuando termines de trabajar en un equipo compartido.
+- Reporta cualquier informacion inconsistente al administrador de la plataforma.
 
+## 10. Problemas frecuentes
+
+### No aparecen dispositivos
+
+Puede que no existan equipos registrados, que la informacion aun no este disponible o que haya un problema de conexion. Espera unos minutos y vuelve a cargar la pagina. Si continua, contacta al administrador.
+
+### Un dispositivo aparece offline
+
+El equipo puede estar apagado, sin conexion o fuera de la red. Verifica el estado fisico del dispositivo y registra el caso si requiere seguimiento.
+
+### No se descarga el reporte
+
+Revisa si el navegador bloqueo la descarga. Tambien confirma que exista informacion disponible para generar el archivo.
+
+### No llegan notificaciones
+
+Verifica que las notificaciones esten permitidas en el navegador. Si estan bloqueadas, habilitalas desde la configuracion del sitio.
+
+### El asistente no responde
+
+Espera unos segundos y vuelve a intentar. Si el problema persiste, registra el caso con el administrador de la plataforma.
+
+## 11. Escalamiento
+
+Debes contactar al administrador o al equipo de soporte cuando ocurra alguno de estos casos:
+
+- No puedes acceder a la plataforma.
+- Hay dispositivos criticos sin informacion actualizada.
+- Un incidente aparece repetidamente sin resolucion.
+- Un reporte contiene informacion incompleta o incorrecta.
+- Se detecta actividad sospechosa o no reconocida.
+
+Al reportar un problema, incluye el nombre del dispositivo, la fecha, la seccion donde ocurrio el problema y una descripcion breve de lo observado.
