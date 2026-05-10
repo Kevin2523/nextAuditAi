@@ -1,0 +1,317 @@
+{
+  "name": "Auditor de Cumplimiento",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 20
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -208,
+        -48
+      ],
+      "id": "9a7704d3-a794-4f0f-afdd-d123b9c05513",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://host.docker.internal:1337/api/v1/fleet/global/policies",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": []
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('GET TOKEN').item.json.token }}"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "id": "272976ac-3c33-4716-b6c0-83c26197c6d3",
+      "name": "Get Policies",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        224,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://host.docker.internal:1337/api/v1/fleet/login",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"email\": \"kjmg2325@gmail.com\",\n  \"password\": \"@Stayhumble521\"\n}",
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "id": "95cf7f3b-c579-44c3-a449-a8f2d32bc989",
+      "name": "GET TOKEN",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        0,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Rol: Actúa como un Analista de Ciberseguridad Senior en el SOC de NextAudit AI.\n\nDatos de entrada:\n\nHost: {{ $json.hosts[0].hostname }}\n\nPolítica: {{ $('Code in JavaScript').item.json.name }}\n\nQuery técnica: {{ $('Code in JavaScript').item.json.query }}\n\nInstrucción de salida:\nTu única tarea es generar una notificación explicando brevemente el fallo\nReglas estrictas:\n\nPROHIBIDO saludar, decir \"Analicé el reporte\" o \"Aquí tienes la notificación\".\n\nTONO: Técnico, frío y urgente.\n\nEjemplo de salida esperada:\nCRÍTICO: Firewall inactivo en Laptop-Kevin. Active el servicio MpsSvc de inmediato.",
+        "messages": {
+          "messageValues": []
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1104,
+        -48
+      ],
+      "id": "28da8f42-b2d8-418e-8c24-320f9a60ef05",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        176
+      ],
+      "id": "6ba2cd3d-0e88-47ce-beb0-dccf5cc9a164",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "HQ4fCbGDraWV8EhM",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "26282f99-55c9-49cf-b7ee-ee99f2eb6940",
+              "leftValue": "={{ $json.failing_host_count }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        768,
+        -16
+      ],
+      "id": "d538dcc3-1484-4c1e-98aa-3267a29fae61",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3001/n8n-webhook",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"dispositivo\": \"{{ $('Get Hostd Fail').item.json.hosts[0].hostname }}\",\n  \"mensaje\": \"{{ $json.text.replace(/\\\\/g, '\\\\\\\\').replace(/\"/g, '\\\\\"').replace(/[\\n\\r]/g, ' ') }}\",\n  \"severidad\": \"critical\",\n  \"timestamp\": \"{{ $now }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1392,
+        -64
+      ],
+      "id": "c421de2c-1390-477b-9257-a19d606754b1",
+      "name": "Enviar Notificacion"
+    },
+    {
+      "parameters": {
+        "url": "https://host.docker.internal:1337/api/v1/fleet/hosts",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "=policy_id:",
+              "value": "={{ $json.policies[0].id }}"
+            },
+            {
+              "name": "policy_response:",
+              "value": "failing"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "=Authorization ",
+              "value": "=Bearer {{ $('GET TOKEN').item.json.token }}"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        944,
+        -48
+      ],
+      "id": "9bcd0632-0e6c-45d3-8476-4d7bbe6a198b",
+      "name": "Get Hostd Fail"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Usamos flatMap para convertir la lista de políticas en items individuales de n8n\nreturn $input.all().flatMap(item => {\n  const lista = item.json.policies || [];\n  return lista.map(p => ({ json: p }));\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        -32
+      ],
+      "id": "328ac6d9-fb5b-40fb-be46-593ba4bcb1f0",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "GET TOKEN",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET TOKEN": {
+      "main": [
+        [
+          {
+            "node": "Get Policies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Policies": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Enviar Notificacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Get Hostd Fail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Hostd Fail": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "4a62f313-fcfa-4aec-915d-308b313087b7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "89ff08d27c1ffe18d3a2b66e5ed7e4f92cfa1334a9f49eec28c812e877690175"
+  },
+  "id": "D2qMwbWA2rOhflxB",
+  "tags": []
+}
