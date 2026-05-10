@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FleetService } from '../../services/fleet.service';
 import { ActivityService } from '../../services/activity.service';
+import { AuditoriaComponent } from '../audit/auditoria';
 
 interface WeeklySecurityPoint {
   label: string;
@@ -16,7 +17,7 @@ interface WeeklySecurityPoint {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, AuditoriaComponent],
   templateUrl: './dashboard.html',
 })
 export class Dashboard {

@@ -22,10 +22,6 @@ export const routes: Routes = [
       { 
         path: 'help-center', 
         loadComponent: () => import('./features/docs/help-center').then(m => m.HelpCenter)
-      },
-      { 
-        path: 'assistant', 
-        loadComponent: () => import('./features/assistant/assistant').then(m => m.Assistant)
       }
     ]
   },

@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { AuditNotification, AuditNotificationService } from '../services/audit-notification.service';
+import { ChatDrawerService } from '../services/chat-drawer.service';
+import { Assistant } from '../features/assistant/assistant';
 
 interface NavItem {
   label: string;
@@ -14,12 +16,13 @@ interface NavItem {
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, Assistant],
   templateUrl: './layout.html',
   styleUrl: './layout.css'
 })
 export class Layout {
   protected readonly auditNotifications = inject(AuditNotificationService);
+  protected readonly chatDrawer = inject(ChatDrawerService);
   collapsed = false;
   currentTitle = 'Dashboard';
   readonly globalQuery = signal('');
@@ -70,6 +73,11 @@ export class Layout {
 
     if (notification.source === 'fleet') {
       this.router.navigate(['/inventory']);
+      return;
+    }
+
+    if (notification.source === 'ai') {
+      this.router.navigate(['/dashboard']);
       return;
     }
 
