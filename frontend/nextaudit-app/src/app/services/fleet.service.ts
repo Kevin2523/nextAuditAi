@@ -85,12 +85,27 @@ export class FleetService {
     })),
   );
 
+  readonly currentAuditAlert = signal<any | null>(null);
+  readonly auditHistory = signal<any[]>([]);
+
   constructor(private readonly http: HttpClient) {
     if (this.fleetToken()) {
       this.refresh();
     } else {
       this.loading.set(false);
     }
+
+    // Polling for bridge server alerts every 5 seconds
+    setInterval(() => {
+      this.http.get<any>('http://localhost:3001/get-alert').pipe(
+        catchError(() => of(null))
+      ).subscribe(alert => {
+        if (alert) {
+          this.currentAuditAlert.set(alert);
+          this.auditHistory.update(prev => [alert, ...prev].slice(0, 50));
+        }
+      });
+    }, 5000);
   }
 
   login(credentials: FleetLoginRequest): Observable<string> {

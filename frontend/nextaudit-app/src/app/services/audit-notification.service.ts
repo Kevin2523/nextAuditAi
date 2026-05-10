@@ -2,7 +2,7 @@ import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { ActivityService } from './activity.service';
 import { FleetService } from './fleet.service';
 
-export type AuditNotificationSource = 'fleet' | 'activity';
+export type AuditNotificationSource = 'fleet' | 'activity' | 'ai';
 export type AuditNotificationSeverity = 'critical' | 'warning';
 
 export interface AuditNotification {
@@ -28,31 +28,14 @@ export class AuditNotificationService {
 
   constructor() {
     effect(() => {
-      const riskyDevices = this.fleet.deviceRows().filter((device) => device.status === 'Riesgo');
-      for (const device of riskyDevices) {
-        const count = device.criticalVulnerabilities;
+      const alert = this.fleet.currentAuditAlert();
+      if (alert) {
         this.pushOnce({
-          key: `fleet-risk-${device.id}-${count}`,
-          title: 'Problema de auditoria detectado',
-          message: `${device.name} tiene ${count} vulnerabilidades criticas.`,
-          source: 'fleet',
-          severity: 'critical',
-        });
-      }
-    });
-
-    effect(() => {
-      const failedAudits = this.activity
-        .logs()
-        .filter((log) => log.estado_resolucion === 'fallido');
-
-      for (const log of failedAudits) {
-        this.pushOnce({
-          key: `activity-failed-${log.id}`,
-          title: 'Auditoria con fallo',
-          message: `${log.tipo_suceso} fallo en ${log.dispositivo_afectado}.`,
-          source: 'activity',
-          severity: 'warning',
+          key: `n8n-alert-${alert.timestamp}-${alert.dispositivo}`,
+          title: 'Alerta de IA Sentinel',
+          message: alert.mensaje,
+          source: 'ai',
+          severity: alert.severidad === 'critical' ? 'critical' : 'warning',
         });
       }
     });
