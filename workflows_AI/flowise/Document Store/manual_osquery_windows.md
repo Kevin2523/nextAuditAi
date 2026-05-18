@@ -1,5 +1,30 @@
 ## Base de Conocimiento Osquery - Exclusivo para Windows
 
+## SECCION 0: GUIA RAPIDA DE USO PARA EL AGENTE
+Usa esta guia antes de recorrer el diccionario completo.
+
+**Reglas operativas:**
+* Para preguntas sobre estado actual de la flota, usa una sola consulta simple y valida antes de intentar varias.
+* Para reportes ejecutivos dentro de la misma sesion, reutiliza primero los resultados ya obtenidos en la conversacion.
+* Si una consulta posterior devuelve vacio, no invalida automaticamente una consulta previa exitosa. Debes reportarlo como inconsistencia operativa.
+* No inventes columnas. Usa solo las tablas y columnas de este manual.
+
+**Recetas recomendadas:**
+* Inventario de hosts conectados: `SELECT hostname, hardware_model, cpu_brand, physical_memory FROM system_info;`
+* Version de Windows: `SELECT name, version, build, arch FROM os_version;`
+* Estado de BitLocker: `SELECT device_id, protection_status, encryption_method, percentage_encrypted FROM bitlocker_info;`
+* Estado del centro de seguridad: `SELECT firewall, antivirus, autoupdate FROM windows_security_center;`
+* Productos de seguridad: `SELECT type, name, state, signatures_up_to_date FROM windows_security_products;`
+* Servicios criticos: `SELECT name, display_name, status, start_type FROM services;`
+* Puertos en escucha: `SELECT pid, port, protocol, address FROM listening_ports;`
+* Tareas programadas: `SELECT name, action, path, enabled, state FROM scheduled_tasks;`
+
+**Guia para reportes ejecutivos:**
+* Primero resume la evidencia confirmada.
+* Luego separa hallazgos, riesgos y recomendaciones.
+* Si faltan datos o hay respuestas vacias, dilo claramente.
+* Si ya hubo una consulta exitosa de hosts en la sesion, no concluyas despues que hay 0 hosts sin explicar la discrepancia.
+
 ## SECCIÓN A: LÓGICA DE POLÍTICAS EN FLEET (CUMPLIMIENTO)
 Esta sección contiene las reglas OBLIGATORIAS para generar políticas en Fleet. NUNCA inventes tablas. Usa únicamente las tablas de la SECCIÓN B.
 
