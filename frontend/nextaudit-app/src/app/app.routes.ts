@@ -19,7 +19,11 @@ export const routes: Routes = [
         path: 'history', 
         loadComponent: () => import('./features/history/history').then(m => m.History)
       },
-      { 
+      {
+        path: 'assistant',
+        loadComponent: () => import('./features/assistant/assistant-page').then(m => m.AssistantPage)
+      },
+      {
         path: 'help-center', 
         loadComponent: () => import('./features/docs/help-center').then(m => m.HelpCenter)
       }

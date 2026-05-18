@@ -23,9 +23,7 @@
         <p class="text-[11px] font-bold tracking-widest text-[#94A3B8] uppercase px-3 mb-3">{{section}}</p>
         
         <ng-container *ngFor="let item of getItemsBySection(section)">
-          <!-- Normal nav link -->
           <a
-            *ngIf="item.icon !== 'bot'"
             [routerLink]="item.route"
             routerLinkActive="nav-active"
             class="nav-item group flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[#475569] text-[14px] font-medium transition-all duration-200 hover:bg-[#F1F5F9] hover:text-[#0F172A] mb-1"
@@ -34,23 +32,11 @@
               <svg *ngIf="item.icon==='layout-dashboard'" class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
               <svg *ngIf="item.icon==='laptop'" class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
               <svg *ngIf="item.icon==='activity'" class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              <svg *ngIf="item.icon==='bot'" class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
               <svg *ngIf="item.icon==='book'" class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
             </div>
             <span>{{item.label}}</span>
           </a>
-
-          <!-- Assistant opens drawer -->
-          <button
-            *ngIf="item.icon === 'bot'"
-            (click)="chatDrawer.open()"
-            class="w-full nav-item group flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[#475569] text-[14px] font-medium transition-all duration-200 hover:bg-[#F1F5F9] hover:text-[#0F172A] mb-1 border-0 bg-transparent cursor-pointer text-left"
-            [class.nav-active]="chatDrawer.isOpen()"
-          >
-            <div class="text-[#64748B] transition-colors group-hover:text-primary-600">
-              <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
-            </div>
-            <span>{{item.label}}</span>
-          </button>
         </ng-container>
       </div>
     </nav>

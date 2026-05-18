@@ -1,17 +1,9 @@
 import { Component, ChangeDetectorRef, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { DomSanitizer } from '@angular/platform-browser';
 import { FlowiseService } from '../../services/flowise.service';
-
-interface SaaSMessage {
-  id: string;
-  sender: 'user' | 'assistant';
-  text: string;
-  html?: SafeHtml;
-  time: string;
-  isTyping?: boolean;
-}
+import { AssistantChatStateService, SaaSMessage } from '../../services/assistant-chat-state.service';
 
 interface SpeechChunk {
   text: string;
@@ -30,8 +22,6 @@ export class Assistant implements AfterViewInit {
 
   messages: SaaSMessage[] = [];
   userInput = '';
-  isTyping = false;
-  sessionId: string | null = null;
   isRecording = false;
   recognition: any = null;
   isVoiceEnabled = true;
@@ -47,13 +37,20 @@ export class Assistant implements AfterViewInit {
   constructor(
     private flowise: FlowiseService,
     private sanitizer: DomSanitizer,
+    private chatState: AssistantChatStateService,
     private cdr: ChangeDetectorRef
   ) {
+    this.messages = this.chatState.messages;
     this.loadVoices();
     window.speechSynthesis.onvoiceschanged = () => this.loadVoices();
   }
 
   ngAfterViewInit() {
+    if (this.chatState.hasWelcomeMessage) {
+      this.scrollToBottom();
+      return;
+    }
+
     const welcomeText = 'Hola, soy tu Asistente de Seguridad. Estoy preparado para analizar tu flota, detectar vulnerabilidades y aplicar reparación autónoma de forma segura. ¿En qué te puedo ayudar hoy?';
 
     this.messages.push({
@@ -66,7 +63,12 @@ export class Assistant implements AfterViewInit {
       `),
       time: this.getTime()
     });
+    this.chatState.hasWelcomeMessage = true;
     this.cdr.detectChanges();
+  }
+
+  get isTyping() {
+    return this.chatState.isTyping;
   }
 
   getTime() {
@@ -90,7 +92,7 @@ export class Assistant implements AfterViewInit {
 
     this.messages.push({ id: 'u-'+Date.now(), sender: 'user', text, time: this.getTime() });
 
-    this.isTyping = true;
+    this.chatState.isTyping = true;
     const typingId = 't-'+Date.now();
     this.messages.push({
       id: typingId,
@@ -103,10 +105,10 @@ export class Assistant implements AfterViewInit {
     this.scrollToBottom();
 
     try {
-      const res = await this.flowise.sendMessage(text, this.sessionId ?? undefined);
-      this.sessionId = res.sessionId ?? this.sessionId;
+      const res = await this.flowise.sendMessage(text, this.chatState.sessionId ?? undefined);
+      this.chatState.sessionId = res.sessionId ?? this.chatState.sessionId;
 
-      this.messages = this.messages.filter(m => m.id !== typingId);
+      this.removeMessage(typingId);
       const assistantMessage: SaaSMessage = {
         id: 'a-'+Date.now(),
         sender: 'assistant',
@@ -130,7 +132,7 @@ export class Assistant implements AfterViewInit {
         });
       }
     } catch {
-      this.messages = this.messages.filter(m => m.id !== typingId);
+      this.removeMessage(typingId);
       this.messages.push({
         id: 'err', sender: 'assistant', text: '',
         html: this.sanitizer.bypassSecurityTrustHtml('<span class="text-red-500 font-medium">Ocurrió un error al contactar al motor de análisis.</span>'),
@@ -138,8 +140,15 @@ export class Assistant implements AfterViewInit {
       });
     }
 
-    this.isTyping = false;
+    this.chatState.isTyping = false;
     this.scrollToBottom();
+  }
+
+  private removeMessage(id: string) {
+    const index = this.messages.findIndex(m => m.id === id);
+    if (index >= 0) {
+      this.messages.splice(index, 1);
+    }
   }
 
   handleKeyDown(e: KeyboardEvent) {
