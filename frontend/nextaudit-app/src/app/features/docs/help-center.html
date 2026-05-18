@@ -31,20 +31,33 @@
     <p *ngIf="filteredCategories().length === 0" class="text-[13px] text-[#94A3B8]">No hay articulos que coincidan con la busqueda.</p>
   </div>
 
-  <div class="saas-card p-8">
+  <div id="article-detail" class="saas-card p-8">
     <h3 class="font-display text-xl font-bold text-[#0F172A] mb-4">{{selectedCategory().title}}</h3>
     <div class="space-y-4 text-[14px] text-[#475569] leading-relaxed">
       <p>{{selectedCategory().article}}</p>
 
-      <div class="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-5 my-6 shadow-sm">
-        <ol class="list-decimal list-inside space-y-3 font-medium">
-          <li><strong>Informacion actualizada:</strong> La plataforma muestra los datos disponibles del entorno monitoreado.</li>
-          <li><strong>Sin simulacion:</strong> Los estados vacios aparecen cuando no hay informacion disponible.</li>
-          <li><strong>Trazabilidad:</strong> Cada reporte o certificado se genera desde la actividad registrada en la plataforma.</li>
-        </ol>
+      <div class="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-6 my-6 shadow-sm">
+        <h4 class="text-[14px] font-bold text-[#0F172A] mb-4 flex items-center gap-2">
+          <svg class="w-4 h-4 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Paso a paso:
+        </h4>
+        <div class="space-y-6">
+          <div *ngFor="let step of selectedCategory().steps; let i = index" class="flex gap-4">
+            <div class="flex flex-col items-center">
+              <div class="w-7 h-7 rounded-full bg-primary-600 text-white text-[12px] font-bold flex items-center justify-center shrink-0">
+                {{i + 1}}
+              </div>
+              <div *ngIf="i < selectedCategory().steps.length - 1" class="w-[2px] h-full bg-primary-100 my-1"></div>
+            </div>
+            <div class="pb-2">
+              <h5 class="text-[14px] font-bold text-[#1E293B]">{{step.title}}</h5>
+              <p class="text-[13px] text-[#64748B] mt-1">{{step.desc}}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <p>Todo el proceso queda auditado bajo la seccion de <em>Registro de Actividad</em> para fines de control y seguimiento de la organizacion.</p>
+      <p class="text-[13px] text-[#94A3B8] italic">Todo el proceso queda auditado bajo la seccion de Registro de Actividad para fines de control y seguimiento de la organizacion.</p>
     </div>
   </div>
 </div>
