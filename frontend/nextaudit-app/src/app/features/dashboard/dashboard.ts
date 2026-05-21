@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { FleetService } from '../../services/fleet.service';
 import { ActivityService } from '../../services/activity.service';
 import { AuditoriaComponent } from '../audit/auditoria';
+import { AuthService } from '../../services/auth.service';
 
 interface WeeklySecurityPoint {
   label: string;
@@ -23,6 +24,7 @@ interface WeeklySecurityPoint {
 export class Dashboard {
   protected readonly fleet = inject(FleetService);
   protected readonly activity = inject(ActivityService);
+  protected readonly auth = inject(AuthService);
 
   readonly metrics = computed(() => [
     {

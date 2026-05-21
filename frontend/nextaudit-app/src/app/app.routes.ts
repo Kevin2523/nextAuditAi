@@ -1,10 +1,16 @@
 import { Routes } from '@angular/router';
 import { Layout } from './layout/layout';
+import { authGuard, roleGuard } from './services/auth.guard';
 
 export const routes: Routes = [
   {
+    path: 'login',
+    loadComponent: () => import('./features/auth/login').then(m => m.Login)
+  },
+  {
     path: '',
     component: Layout,
+    canActivate: [authGuard],
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { 
@@ -21,6 +27,8 @@ export const routes: Routes = [
       },
       {
         path: 'assistant',
+        canActivate: [roleGuard],
+        data: { roles: ['admin', 'super_admin'] },
         loadComponent: () => import('./features/assistant/assistant-page').then(m => m.AssistantPage)
       },
       {

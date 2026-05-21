@@ -4,7 +4,9 @@
     <span *ngIf="activity.isOffline()" class="text-[12px] text-[#334155] bg-[#E2E8F0] border border-[#CBD5E1] rounded-full px-2.5 py-1">Actividad no disponible</span>
   </div>
 
-  <app-auditoria></app-auditoria>
+  @if (auth.role() !== 'viewer') {
+    <app-auditoria></app-auditoria>
+  }
 
   <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
     <div *ngFor="let m of metrics()" class="saas-card p-6">
@@ -38,7 +40,9 @@
     <div class="lg:col-span-2 saas-card p-6">
       <div class="flex items-center justify-between mb-6">
         <h3 class="font-display text-base font-bold text-[#0F172A]">Rendimiento de Seguridad Semanal</h3>
-        <button (click)="downloadReport()" class="text-[13px] text-primary-600 font-semibold hover:underline cursor-pointer">Descargar Reporte</button>
+        @if (auth.role() !== 'viewer') {
+          <button (click)="downloadReport()" class="text-[13px] text-primary-600 font-semibold hover:underline cursor-pointer">Descargar Reporte</button>
+        }
       </div>
 
       <div class="w-full h-64 border-b border-[#E2E8F0] relative flex items-end justify-between px-2 pb-6">
@@ -84,9 +88,11 @@
         </div>
         <p *ngIf="recentIssues().length === 0" class="text-[13px] text-[#94A3B8]">Sin actividad reciente todavia.</p>
       </div>
-      <button routerLink="/history" class="mt-4 w-full py-2.5 bg-surface text-[#475569] text-[13px] font-semibold rounded-lg hover:bg-[#E2E8F0] transition-colors border border-border">
-        Ver Registro Completo
-      </button>
+      @if (auth.role() !== 'viewer') {
+        <button routerLink="/history" class="mt-4 w-full py-2.5 bg-surface text-[#475569] text-[13px] font-semibold rounded-lg hover:bg-[#E2E8F0] transition-colors border border-border">
+          Ver Registro Completo
+        </button>
+      }
     </div>
   </div>
 </div>

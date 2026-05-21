@@ -1,0 +1,52 @@
+<main class="min-h-screen bg-[#F8FAFC] flex items-center justify-center px-6">
+  <section class="w-full max-w-[420px] bg-white border border-[#E2E8F0] rounded-lg shadow-sm p-8">
+    <div class="mb-8">
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-9 h-9 rounded-lg bg-primary-600 flex items-center justify-center text-white">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div>
+          <p class="font-display text-[18px] font-extrabold text-[#0F172A] leading-tight">NextAudit AI</p>
+          <p class="text-[12px] text-[#64748B]">Acceso seguro SaaS</p>
+        </div>
+      </div>
+
+      <h1 class="text-xl font-bold text-[#0F172A]">Iniciar sesion</h1>
+      <p class="text-sm text-[#64748B] mt-1">Usa tu cuenta asignada para acceder a la consola.</p>
+    </div>
+
+    <form class="space-y-5" [formGroup]="form" (ngSubmit)="submit()">
+      <label class="block">
+        <span class="block text-[13px] font-semibold text-[#334155] mb-2">Correo</span>
+        <input
+          type="email"
+          formControlName="email"
+          autocomplete="email"
+          class="w-full h-11 rounded-lg border border-[#CBD5E1] px-3 text-sm text-[#0F172A] outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"
+        />
+      </label>
+
+      <label class="block">
+        <span class="block text-[13px] font-semibold text-[#334155] mb-2">Contrasena</span>
+        <input
+          type="password"
+          formControlName="password"
+          autocomplete="current-password"
+          class="w-full h-11 rounded-lg border border-[#CBD5E1] px-3 text-sm text-[#0F172A] outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"
+        />
+      </label>
+
+      <p *ngIf="error()" class="text-sm text-red-600">{{ error() }}</p>
+
+      <button
+        type="submit"
+        [disabled]="loading()"
+        class="w-full h-11 rounded-lg bg-primary-600 text-white text-sm font-bold hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+      >
+        {{ loading() ? 'Validando...' : 'Entrar' }}
+      </button>
+    </form>
+  </section>
+</main>

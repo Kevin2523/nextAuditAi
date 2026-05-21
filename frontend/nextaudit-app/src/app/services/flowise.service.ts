@@ -7,15 +7,10 @@ export interface ChatResponse {
 
 @Injectable({ providedIn: 'root' })
 export class FlowiseService {
-  private readonly apiHost = 'http://localhost:3000';
-  private readonly chatflowId = 'edf621f0-daf7-4516-adbf-8fc6f48c31f3';
-
-  private get endpoint(): string {
-    return `${this.apiHost}/api/v1/prediction/${this.chatflowId}`;
-  }
+  private readonly endpoint = '/api/v1/ai/chat';
 
   async sendMessage(question: string, sessionId?: string): Promise<ChatResponse> {
-    const body: Record<string, string> = { question };
+    const body: Record<string, string> = { message: question };
     if (sessionId) body['sessionId'] = sessionId;
 
     const res = await fetch(this.endpoint, {
@@ -24,7 +19,7 @@ export class FlowiseService {
       body: JSON.stringify(body)
     });
 
-    if (!res.ok) throw new Error(`Flowise API error: ${res.status}`);
+    if (!res.ok) throw new Error(`NextAudit AI API error: ${res.status}`);
     const data = await res.json();
 
     return {

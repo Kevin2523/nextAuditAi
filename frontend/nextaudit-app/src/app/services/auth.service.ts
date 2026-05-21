@@ -1,75 +1,130 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, computed, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, forkJoin, map, of, tap } from 'rxjs';
-import { FleetLoginRequest, FleetService } from './fleet.service';
-import { FleetTokenService } from './fleet-token.service';
+import { Observable, map, tap } from 'rxjs';
 
-export interface N8nLoginRequest {
-  emailOrLdapLoginId: string;
+export type UserRole = 'viewer' | 'admin' | 'super_admin';
+
+export interface JwtClaims {
+  sub: string;
+  email: string;
+  role: UserRole;
+  tenant_id: string;
+  exp?: number;
+  iat?: number;
+}
+
+export interface CurrentUser {
+  id: string;
+  email: string;
+  role: UserRole;
+  tenantId: string;
+}
+
+export interface LoginRequest {
+  email: string;
   password: string;
 }
 
-export interface LoginAllRequest {
-  fleet: FleetLoginRequest;
-  n8n: N8nLoginRequest;
+interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  tokenType: 'Bearer';
+  user: {
+    id: string;
+    email: string;
+    displayName: string;
+    role: UserRole;
+    tenantId: string;
+  };
 }
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly http = inject(HttpClient);
-  private readonly tokenService = inject(FleetTokenService);
-  private readonly fleetService = inject(FleetService);
+  private readonly accessTokenSignal = signal<string | null>(null);
+  private readonly refreshTokenSignal = signal<string | null>(null);
 
-  private readonly CREDENTIALS: LoginAllRequest = {
-    fleet: {
-      email: 'kjmg2325@gmail.com',
-      password: '@Stayhumble521',
-    },
-    n8n: {
-      emailOrLdapLoginId: 'kjmg2325@gmail.com',
-      password: 'Vinke521',
-    },
-  };
+  readonly claimsSignal = computed<JwtClaims | null>(() => {
+    const token = this.accessTokenSignal();
+    if (!token) return null;
 
-  loginAll(credentials: LoginAllRequest = this.CREDENTIALS): Observable<unknown> {
-    return forkJoin({
-      fleet: this.loginFleet(credentials.fleet).pipe(catchError(() => of(null))),
-      n8n: this.loginN8n(credentials.n8n).pipe(catchError(() => of(null))),
-    });
-  }
+    const claims = this.decodeJwt(token);
+    if (!claims || this.isExpired(claims)) return null;
 
-  autoLogin(): void {
-    // Only login if we don't have tokens or if we want to ensure fresh ones
-    this.loginAll().subscribe({
-      next: (res) => {
-        console.log('NextAudit Auto-login successful', res);
-        this.fleetService.refresh();
-      },
-      error: (err) => console.error('NextAudit Auto-login failed', err),
-    });
-  }
+    return claims;
+  });
 
-  loginFleet(credentials: FleetLoginRequest): Observable<string | null> {
-    return this.fleetService.login(credentials).pipe(
-      tap((token) => {
-        if (token) {
-          this.tokenService.setFleetToken(token);
+  readonly currentUserSignal = computed<CurrentUser | null>(() => {
+    const claims = this.claimsSignal();
+    if (!claims) return null;
+
+    return {
+      id: claims.sub,
+      email: claims.email,
+      role: claims.role,
+      tenantId: claims.tenant_id,
+    };
+  });
+
+  readonly isAuthenticated = computed(() => Boolean(this.currentUserSignal()));
+  readonly role = computed(() => this.currentUserSignal()?.role ?? null);
+  readonly canUseAi = computed(() => {
+    const role = this.role();
+    return role === 'admin' || role === 'super_admin';
+  });
+
+  constructor(private readonly http: HttpClient) {}
+
+  login(credentials: LoginRequest): Observable<CurrentUser> {
+    return this.http.post<LoginResponse>('/api/v1/auth/login', credentials).pipe(
+      tap((response) => this.storeSession(response.accessToken, response.refreshToken)),
+      map(() => {
+        const user = this.currentUserSignal();
+        if (!user) {
+          throw new Error('No se pudo iniciar la sesion.');
         }
+        return user;
       }),
-      map((token) => token ?? null),
     );
   }
 
-  loginN8n(credentials: N8nLoginRequest): Observable<string | null> {
-    return this.http.post<{ data?: { token?: string } }>('/rest/login', credentials, { withCredentials: true }).pipe(
-      tap((res) => {
-        const token = res?.data?.token;
-        if (token) {
-          this.tokenService.setN8nToken(token);
-        }
-      }),
-      map((res) => res?.data?.token ?? null),
-      catchError(() => of(null)),
-    );
+  logout(): void {
+    this.clearSession();
+  }
+
+  accessToken(): string | null {
+    return this.accessTokenSignal();
+  }
+
+  hasAnyRole(roles: UserRole[]): boolean {
+    const role = this.role();
+    return Boolean(role && roles.includes(role));
+  }
+
+  private storeSession(accessToken: string, refreshToken: string): void {
+    this.accessTokenSignal.set(accessToken);
+    this.refreshTokenSignal.set(refreshToken);
+  }
+
+  private clearSession(): void {
+    this.accessTokenSignal.set(null);
+    this.refreshTokenSignal.set(null);
+  }
+
+  private decodeJwt(token: string): JwtClaims | null {
+    const [, payload] = token.split('.');
+    if (!payload) return null;
+
+    try {
+      const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+      return JSON.parse(atob(padded)) as JwtClaims;
+    } catch {
+      return null;
+    }
+  }
+
+  private isExpired(claims: JwtClaims): boolean {
+    if (!claims.exp) return false;
+    return claims.exp * 1000 <= Date.now();
   }
 }

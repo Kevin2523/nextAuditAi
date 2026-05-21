@@ -1,0 +1,13 @@
+flowchart LR
+    U[Usuario Angular 21] --> L[Login]
+    L --> API[NextAudit API / Auth]
+    API --> IAM[(PostgreSQL schema iam)]
+    IAM --> API
+    API --> JWT[JWT access + refresh]
+    JWT --> FE[Angular auth state]
+    FE --> RG[Angular route guard]
+    FE --> API2[Protected API request]
+    API2 --> JG[JwtAuthGuard]
+    JG --> RBG[RolesGuard / PermissionsGuard]
+    RBG --> MOD[Domain module]
+    MOD --> DB[(PostgreSQL domain schemas)]

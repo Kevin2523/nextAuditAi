@@ -1,0 +1,11 @@
+flowchart TD
+    F[FleetDM / Osquery] --> N[n8n workflow]
+    N --> W[NextAudit API secure webhook]
+    W --> V[Verify secret/signature and payload]
+    V --> Q[Alert ingestion queue]
+    Q --> WK[NextAudit Worker]
+    WK --> M[Normalize and enrich alert]
+    M --> T[(PostgreSQL schema telemetry)]
+    M --> A[(PostgreSQL schema audit)]
+    T --> API[Alerts query module]
+    API --> FE[Angular dashboard/history]

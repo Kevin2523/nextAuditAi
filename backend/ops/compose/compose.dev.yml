@@ -1,0 +1,40 @@
+name: nextaudit-backend-dev
+
+volumes:
+  nextaudit_pg_data:
+  nextaudit_redis_data:
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nextaudit-postgres
+    environment:
+      POSTGRES_USER: nextaudit
+      POSTGRES_PASSWORD: nextaudit_dev_password
+      POSTGRES_DB: nextaudit
+    ports:
+      - "5433:5432"
+    volumes:
+      - nextaudit_pg_data:/var/lib/postgresql/data
+      - ../scripts/init-schemas.sql:/docker-entrypoint-initdb.d/01-init-schemas.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nextaudit -d nextaudit"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: nextaudit-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6380:6379"
+    volumes:
+      - nextaudit_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped

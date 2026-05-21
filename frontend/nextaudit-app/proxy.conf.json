@@ -1,21 +1,6 @@
 {
-  "/api/n8n": {
-    "target": "http://localhost:5678",
-    "secure": false,
-    "changeOrigin": true,
-    "pathRewrite": {
-      "^/api/n8n": ""
-    },
-    "logLevel": "debug"
-  },
-  "/rest": {
-    "target": "http://localhost:5678",
-    "secure": false,
-    "changeOrigin": true,
-    "logLevel": "debug"
-  },
   "/api": {
-    "target": "https://localhost:1337",
+    "target": "http://localhost:3001",
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug"

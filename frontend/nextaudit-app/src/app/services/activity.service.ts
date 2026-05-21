@@ -21,6 +21,7 @@ export interface N8nExecution {
   workflowData?: {
     name?: string;
   };
+  workflowName?: string;
   tipo_suceso?: string;
   dispositivo_afectado?: string;
   estado_resolucion?: 'exitoso' | 'fallido';
@@ -41,13 +42,7 @@ export interface ActivityLog {
 @Injectable({ providedIn: 'root' })
 export class ActivityService {
   private readonly pollMs = 20_000;
-
-  private readonly executionEndpoints = [
-    '/api/n8n/activity',
-    '/api/n8n/rest/executions',
-    '/api/n8n/api/v1/executions',
-    '/api/n8n/executions',
-  ];
+  private readonly executionEndpoint = '/api/v1/activity/executions?limit=20';
 
   readonly logs = signal<ActivityLog[]>([]);
   readonly isOffline = signal(false);
@@ -83,20 +78,9 @@ export class ActivityService {
   }
 
   private fetchExecutions(): Observable<N8nExecution[]> {
-    return this.fetchExecutionsFrom(0);
-  }
-
-  private fetchExecutionsFrom(index: number): Observable<N8nExecution[]> {
-    const endpoint = this.executionEndpoints[index];
-    if (!endpoint) {
-      return throwError(() => new Error('No fue posible consultar la actividad registrada.'));
-    }
-
-    return this.http.get<unknown>(endpoint).pipe(
+    return this.http.get<unknown>(this.executionEndpoint).pipe(
       map((response) => this.normalizeExecutions(response)),
-      catchError((error: unknown) =>
-        index < this.executionEndpoints.length - 1 ? this.fetchExecutionsFrom(index + 1) : throwError(() => error),
-      ),
+      catchError((error: unknown) => throwError(() => error)),
     );
   }
 
@@ -125,6 +109,10 @@ export class ActivityService {
     const data = record['data'];
     if (data && typeof data === 'object') {
       const dataRecord = data as Record<string, unknown>;
+      if (Array.isArray(dataRecord['executions'])) {
+        return dataRecord['executions'] as N8nExecution[];
+      }
+
       if (Array.isArray(dataRecord['results'])) {
         return dataRecord['results'] as N8nExecution[];
       }
@@ -144,7 +132,7 @@ export class ActivityService {
 
     return {
       id: execution.id || `${eventDate.getTime()}-${Math.random().toString(16).slice(2)}`,
-      tipo_suceso: execution.tipo_suceso || execution.workflowData?.name || 'Auto-healing',
+      tipo_suceso: execution.tipo_suceso || execution.workflowData?.name || execution.workflowName || 'Auto-healing',
       dispositivo_afectado: execution.dispositivo_afectado || 'Dispositivo no identificado',
       occurredAt: eventDate.toISOString(),
       timestamp: this.formatAbsoluteDate(eventDate),

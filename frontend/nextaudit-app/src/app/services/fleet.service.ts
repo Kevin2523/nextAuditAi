@@ -1,7 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, catchError, forkJoin, map, of, tap, throwError } from 'rxjs';
-import { FleetTokenService } from './fleet-token.service';
+import { catchError, forkJoin, map, of, throwError } from 'rxjs';
 
 export interface FleetHost {
   id: number;
@@ -29,10 +28,6 @@ export interface FleetLoginRequest {
   password: string;
 }
 
-interface FleetLoginResponse {
-  token: string;
-}
-
 export interface DeviceRow {
   id: number;
   name: string;
@@ -48,10 +43,7 @@ export interface DeviceRow {
 
 @Injectable({ providedIn: 'root' })
 export class FleetService {
-  private readonly tokenStorage = inject(FleetTokenService);
   private readonly base = '/api/v1/fleet';
-  private readonly fleetToken = signal<string | null>(this.readStoredToken());
-  readonly token = this.fleetToken.asReadonly();
 
   readonly hosts = signal<FleetHost[]>([]);
   readonly vulnerabilities = signal<FleetVulnerability[]>([]);
@@ -68,7 +60,7 @@ export class FleetService {
     return total === 0 ? 0 : Math.round((this.onlineHosts() / total) * 100);
   });
   readonly vulnerabilityCount = computed(() => this.vulnerabilities().length);
-  readonly isAuthenticated = computed(() => Boolean(this.fleetToken()));
+  readonly isAuthenticated = computed(() => true);
 
   readonly deviceRows = computed<DeviceRow[]>(() =>
     this.hosts().map((host) => ({
@@ -89,62 +81,25 @@ export class FleetService {
   readonly auditHistory = signal<any[]>([]);
 
   constructor(private readonly http: HttpClient) {
-    if (this.fleetToken()) {
-      this.refresh();
-    } else {
-      this.loading.set(false);
-    }
-
-    // Polling for bridge server alerts every 5 seconds
-    setInterval(() => {
-      this.http.get<any>('http://localhost:3001/get-alert').pipe(
-        catchError(() => of(null))
-      ).subscribe(alert => {
-        if (alert) {
-          this.currentAuditAlert.set(alert);
-          this.auditHistory.update(prev => [alert, ...prev].slice(0, 50));
-        }
-      });
-    }, 5000);
+    this.refresh();
   }
 
-  login(credentials: FleetLoginRequest): Observable<string> {
+  login(_credentials: FleetLoginRequest) {
     this.authLoading.set(true);
     this.authError.set(null);
 
-    return this.http.post<FleetLoginResponse>(`${this.base}/login`, credentials).pipe(
-      map((response) => {
-        const token = response?.token?.trim();
-        if (!token) {
-          throw new Error('No se pudo validar la sesion.');
-        }
-        return token;
-      }),
-      tap((token) => {
-        this.fleetToken.set(token);
-        this.tokenStorage.setFleetToken(token);
-      }),
-      tap(() => this.refresh()),
-      catchError((error: unknown) => {
-        const parsed = this.parseError(error, 'No se pudo iniciar sesion.');
-        this.authError.set(parsed.message);
-        return throwError(() => parsed);
-      }),
-      tap({
-        next: () => this.authLoading.set(false),
-        error: () => this.authLoading.set(false),
-      }),
-    );
+    this.refresh();
+    this.authLoading.set(false);
+
+    return of('backend-managed');
   }
 
   logout() {
-    this.fleetToken.set(null);
     this.hosts.set([]);
     this.vulnerabilities.set([]);
     this.authError.set(null);
     this.dataError.set(null);
     this.isOffline.set(false);
-    this.tokenStorage.clearFleetToken();
   }
 
   getHosts() {
@@ -170,13 +125,6 @@ export class FleetService {
   }
 
   refresh() {
-    if (!this.fleetToken()) {
-      this.dataError.set('No hay una sesion activa configurada.');
-      this.loading.set(false);
-      this.isOffline.set(true);
-      return;
-    }
-
     this.loading.set(true);
     this.dataError.set(null);
 
@@ -262,10 +210,6 @@ export class FleetService {
       hour: '2-digit',
       minute: '2-digit',
     }).format(date);
-  }
-
-  private readStoredToken(): string | null {
-    return this.tokenStorage.fleetToken;
   }
 
   private parseError(error: unknown, fallbackMessage: string): Error {

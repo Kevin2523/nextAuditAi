@@ -11,6 +11,7 @@ NextAudit AI transforma telemetria tecnica en decisiones auditables para equipos
 - FleetDM: inventario, postura y visibilidad de endpoints.
 - n8n: orquestacion de flujos de auditoria y automatizaciones.
 - Flowise: capa de IA aplicada a analisis y asistencia operativa.
+- Backend SaaS: API NestJS modular para identidad, RBAC, ingesta segura, gobierno de IA y fachadas de integracion.
 - PostgreSQL/MySQL/Redis: persistencia operacional y metadatos.
 - Docker Compose: despliegue reproducible para desarrollo, pruebas y produccion.
 
@@ -25,6 +26,17 @@ docker compose -f src/ai-sentinel/docker-compose.dev.yml up -d
 ```
 
 4. Verificar servicios principales (`fleet`, `n8n`, `flowise`, `postgres`, `mysql`, `redis`).
+
+## Backend SaaS
+
+La nueva base SaaS vive en `backend/`. Su primer objetivo es reemplazar gradualmente el `bridge-server.js`, centralizar autenticacion/RBAC y mover Fleet/Flowise/n8n detras de una API gobernada.
+
+Para levantar solo PostgreSQL y Redis del backend:
+
+```powershell
+cd backend
+.\ops\scripts\dev-up.ps1
+```
 
 ## Estructura de Ramas
 

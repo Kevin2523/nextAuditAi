@@ -10,6 +10,6 @@ import { AuthService } from './services/auth.service';
 })
 export class App {
   constructor() {
-    inject(AuthService).autoLogin();
+    inject(AuthService);
   }
 }
