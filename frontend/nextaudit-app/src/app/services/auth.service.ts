@@ -40,6 +40,8 @@ interface LoginResponse {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  private readonly accessTokenStorageKey = 'nextaudit.access_token';
+  private readonly refreshTokenStorageKey = 'nextaudit.refresh_token';
   private readonly accessTokenSignal = signal<string | null>(null);
   private readonly refreshTokenSignal = signal<string | null>(null);
 
@@ -72,7 +74,9 @@ export class AuthService {
     return role === 'admin' || role === 'super_admin';
   });
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(private readonly http: HttpClient) {
+    this.restoreSession();
+  }
 
   login(credentials: LoginRequest): Observable<CurrentUser> {
     return this.http.post<LoginResponse>('/api/v1/auth/login', credentials).pipe(
@@ -103,11 +107,34 @@ export class AuthService {
   private storeSession(accessToken: string, refreshToken: string): void {
     this.accessTokenSignal.set(accessToken);
     this.refreshTokenSignal.set(refreshToken);
+    sessionStorage.setItem(this.accessTokenStorageKey, accessToken);
+    sessionStorage.setItem(this.refreshTokenStorageKey, refreshToken);
   }
 
   private clearSession(): void {
     this.accessTokenSignal.set(null);
     this.refreshTokenSignal.set(null);
+    sessionStorage.removeItem(this.accessTokenStorageKey);
+    sessionStorage.removeItem(this.refreshTokenStorageKey);
+  }
+
+  private restoreSession(): void {
+    const accessToken = sessionStorage.getItem(this.accessTokenStorageKey);
+    const refreshToken = sessionStorage.getItem(this.refreshTokenStorageKey);
+
+    if (!accessToken || !refreshToken) {
+      this.clearSession();
+      return;
+    }
+
+    const claims = this.decodeJwt(accessToken);
+    if (!claims || this.isExpired(claims)) {
+      this.clearSession();
+      return;
+    }
+
+    this.accessTokenSignal.set(accessToken);
+    this.refreshTokenSignal.set(refreshToken);
   }
 
   private decodeJwt(token: string): JwtClaims | null {

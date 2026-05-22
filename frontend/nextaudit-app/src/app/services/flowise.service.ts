@@ -1,7 +1,11 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 
 export interface ChatResponse {
   text: string;
+  answer?: string;
+  response?: string;
   sessionId?: string;
 }
 
@@ -9,18 +13,13 @@ export interface ChatResponse {
 export class FlowiseService {
   private readonly endpoint = '/api/v1/ai/chat';
 
+  constructor(private readonly http: HttpClient) {}
+
   async sendMessage(question: string, sessionId?: string): Promise<ChatResponse> {
     const body: Record<string, string> = { message: question };
     if (sessionId) body['sessionId'] = sessionId;
 
-    const res = await fetch(this.endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-
-    if (!res.ok) throw new Error(`NextAudit AI API error: ${res.status}`);
-    const data = await res.json();
+    const data = await firstValueFrom(this.http.post<ChatResponse>(this.endpoint, body));
 
     return {
       text: data.text || data.answer || data.response || 'Sin respuesta del agente.',

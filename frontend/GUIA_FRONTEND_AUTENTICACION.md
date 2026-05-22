@@ -8,15 +8,16 @@ El servicio `AuthService` mantiene el estado con Angular Signals:
 
 - `claimsSignal`: claims decodificados del JWT.
 - `currentUserSignal`: usuario actual con `id`, `email`, `role` y `tenantId`.
-- `isAuthenticated`: indica si existe una sesion valida en memoria.
+- `isAuthenticated`: indica si existe una sesion valida restaurada o activa.
 - `canUseAi`: habilita funciones IA para `admin` y `super_admin`.
 
 ## Manejo de Tokens
 
-- Access Token: se mantiene solo en memoria mediante Signal.
-- Refresh Token: se mantiene solo en memoria mientras no exista cookie segura emitida por backend.
+- Access Token: se mantiene en Signal y se restaura desde `sessionStorage` al recargar la pagina.
+- Refresh Token: se mantiene en Signal y `sessionStorage` como medida temporal de desarrollo.
+- Al cerrar la pestana o el navegador, el navegador limpia esta sesion.
 
-La opcion recomendada para produccion es mover el refresh token a una cookie `HttpOnly`, `Secure` y `SameSite`, emitida por el backend. No se implementa aqui porque los contratos backend ya estan estables para esta fase.
+La opcion recomendada para produccion es mover el refresh token a una cookie `HttpOnly`, `Secure` y `SameSite`, emitida por el backend.
 
 ## Interceptor HTTP
 
