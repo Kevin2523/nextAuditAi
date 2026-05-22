@@ -19,21 +19,21 @@
         </tr>
       </thead>
       <tbody class="divide-y divide-[#E2E8F0]">
-        <tr *ngFor="let alert of fleet.auditHistory()" class="hover:bg-[#F8FAFC] transition-colors">
-          <td class="py-3 px-4 text-[13px] font-mono text-[#64748B] whitespace-nowrap">{{ formatDate(alert.timestamp) }}</td>
-          <td class="py-3 px-4 text-[13px] font-semibold text-[#0F172A] whitespace-nowrap">{{ alert.dispositivo }}</td>
+        <tr *ngFor="let alert of alerts.alerts()" class="hover:bg-[#F8FAFC] transition-colors">
+          <td class="py-3 px-4 text-[13px] font-mono text-[#64748B] whitespace-nowrap">{{ formatDate(alert.receivedAt) }}</td>
+          <td class="py-3 px-4 text-[13px] font-semibold text-[#0F172A] whitespace-nowrap">{{ hostName(alert.hostname, alert.deviceId) }}</td>
           <td class="py-3 px-4 text-[13px]">
             <div class="flex items-start gap-2">
               <div class="w-2 h-2 rounded-full mt-1.5 shrink-0"
-                   [class]="alert.severidad === 'critical' ? 'bg-[#EF4444] shadow-[0_0_8px_rgba(239,68,68,0.6)]' : 'bg-[#0D9488]'">
+                   [class]="alert.severity === 'critical' ? 'bg-[#EF4444] shadow-[0_0_8px_rgba(239,68,68,0.6)]' : 'bg-[#0D9488]'">
               </div>
-              <span [class]="alert.severidad === 'critical' ? 'text-[#DC2626] font-medium' : 'text-[#334155]'">
-                {{ alert.mensaje }}
+              <span [class]="alert.severity === 'critical' ? 'text-[#DC2626] font-medium' : 'text-[#334155]'">
+                {{ alert.message }}
               </span>
             </div>
           </td>
         </tr>
-        <tr *ngIf="fleet.auditHistory().length === 0">
+        <tr *ngIf="alerts.alerts().length === 0">
           <td colspan="3" class="py-10 text-center text-[13px] text-[#94A3B8] font-medium">
             Esperando transmisión de datos...
           </td>

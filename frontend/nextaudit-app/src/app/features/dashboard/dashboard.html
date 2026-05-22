@@ -2,6 +2,7 @@
   <div class="flex items-center justify-end gap-3">
     <span *ngIf="fleet.isOffline()" class="text-[12px] text-[#92400E] bg-[#FEF3C7] border border-[#FDE68A] rounded-full px-2.5 py-1">Datos de dispositivos no disponibles</span>
     <span *ngIf="activity.isOffline()" class="text-[12px] text-[#334155] bg-[#E2E8F0] border border-[#CBD5E1] rounded-full px-2.5 py-1">Actividad no disponible</span>
+    <span *ngIf="alerts.isOffline()" class="text-[12px] text-[#991B1B] bg-[#FEF2F2] border border-[#FECACA] rounded-full px-2.5 py-1">Alertas no disponibles</span>
   </div>
 
   @if (auth.role() !== 'viewer') {

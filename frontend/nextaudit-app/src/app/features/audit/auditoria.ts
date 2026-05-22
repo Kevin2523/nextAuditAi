@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FleetService } from '../../services/fleet.service';
+import { AlertsService } from '../../services/alerts.service';
 
 @Component({
   selector: 'app-auditoria',
@@ -10,7 +10,7 @@ import { FleetService } from '../../services/fleet.service';
   styleUrl: './auditoria.css',
 })
 export class AuditoriaComponent {
-  protected readonly fleet = inject(FleetService);
+  protected readonly alerts = inject(AlertsService);
 
   formatDate(isoString: string): string {
     const date = new Date(isoString);
@@ -19,5 +19,9 @@ export class AuditoriaComponent {
       minute: '2-digit',
       second: '2-digit',
     }).format(date);
+  }
+
+  hostName(hostname?: string | null, deviceId?: string | null): string {
+    return hostname || deviceId || 'Dispositivo no identificado';
   }
 }

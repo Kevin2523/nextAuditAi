@@ -5,6 +5,7 @@ import { FleetService } from '../../services/fleet.service';
 import { ActivityService } from '../../services/activity.service';
 import { AuditoriaComponent } from '../audit/auditoria';
 import { AuthService } from '../../services/auth.service';
+import { AlertsService } from '../../services/alerts.service';
 
 interface WeeklySecurityPoint {
   label: string;
@@ -25,6 +26,7 @@ export class Dashboard {
   protected readonly fleet = inject(FleetService);
   protected readonly activity = inject(ActivityService);
   protected readonly auth = inject(AuthService);
+  protected readonly alerts = inject(AlertsService);
 
   readonly metrics = computed(() => [
     {
@@ -45,9 +47,9 @@ export class Dashboard {
     },
     {
       label: 'Incidentes Detectados',
-      value: `${this.fleet.vulnerabilityCount()}`,
-      trend: 'Vulnerabilidades activas',
-      up: this.fleet.vulnerabilityCount() === 0,
+      value: `${this.alerts.alerts().filter((alert) => alert.status === 'open').length}`,
+      trend: 'Alertas abiertas',
+      up: this.alerts.alerts().filter((alert) => alert.status === 'open').length === 0,
       icon: 'wrench',
       color: 'warning',
     },
