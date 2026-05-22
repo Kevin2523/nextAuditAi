@@ -32,6 +32,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/assistant/assistant-page').then(m => m.AssistantPage)
       },
       {
+        path: 'admin/users',
+        canActivate: [roleGuard],
+        data: { roles: ['super_admin'] },
+        loadComponent: () => import('./features/admin-users/admin-users').then(m => m.AdminUsers)
+      },
+      {
         path: 'help-center', 
         loadComponent: () => import('./features/docs/help-center').then(m => m.HelpCenter)
       }

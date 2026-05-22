@@ -1,0 +1,103 @@
+<div class="grid grid-cols-1 xl:grid-cols-[380px_1fr] gap-6">
+  <section class="saas-card bg-white p-5">
+    <div class="mb-5">
+      <p class="text-[13px] font-bold text-[#0F172A]">Crear usuario</p>
+      <p class="text-[12px] text-[#64748B] mt-1">El super usuario puede asignar el rol inicial de cada cuenta.</p>
+    </div>
+
+    <form class="space-y-4" (ngSubmit)="createUser()">
+      <label class="block">
+        <span class="block text-[12px] font-semibold text-[#334155] mb-1.5">Nombre</span>
+        <input type="text" [value]="form().displayName" (input)="updateField('displayName', $event)" class="w-full border border-[#E2E8F0] rounded-lg px-3 py-2 text-[13px] bg-[#F8FAFC] focus:bg-white focus:outline-none focus:border-primary-500" required />
+      </label>
+
+      <label class="block">
+        <span class="block text-[12px] font-semibold text-[#334155] mb-1.5">Correo</span>
+        <input type="email" [value]="form().email" (input)="updateField('email', $event)" class="w-full border border-[#E2E8F0] rounded-lg px-3 py-2 text-[13px] bg-[#F8FAFC] focus:bg-white focus:outline-none focus:border-primary-500" required />
+      </label>
+
+      <label class="block">
+        <span class="block text-[12px] font-semibold text-[#334155] mb-1.5">Contrasena temporal</span>
+        <input type="password" [value]="form().password" (input)="updateField('password', $event)" class="w-full border border-[#E2E8F0] rounded-lg px-3 py-2 text-[13px] bg-[#F8FAFC] focus:bg-white focus:outline-none focus:border-primary-500" minlength="10" required />
+      </label>
+
+      <label class="block">
+        <span class="block text-[12px] font-semibold text-[#334155] mb-1.5">Rol</span>
+        <select [value]="form().role" (change)="updateField('role', $event)" class="w-full border border-[#E2E8F0] rounded-lg px-3 py-2 text-[13px] bg-[#F8FAFC] focus:bg-white focus:outline-none focus:border-primary-500">
+          <option *ngFor="let role of roles" [value]="role.code">{{ role.label }}</option>
+        </select>
+      </label>
+
+      <label class="flex items-center gap-2 text-[13px] font-semibold text-[#334155]">
+        <input type="checkbox" [checked]="form().isActive" (change)="updateField('isActive', $event)" />
+        Cuenta activa
+      </label>
+
+      <button type="submit" [disabled]="adminUsers.saving()" class="w-full rounded-lg bg-primary-600 px-4 py-2.5 text-[13px] font-bold text-white hover:bg-primary-700 disabled:opacity-60">
+        {{ adminUsers.saving() ? 'Guardando...' : 'Crear usuario' }}
+      </button>
+
+      <p *ngIf="feedback()" class="text-[12px] text-[#047857] bg-[#ECFDF5] border border-[#A7F3D0] rounded-lg px-3 py-2">
+        {{ feedback() }}
+      </p>
+    </form>
+  </section>
+
+  <section class="saas-card overflow-hidden bg-white">
+    <div class="p-5 border-b border-[#E2E8F0] flex flex-wrap gap-4 items-center justify-between">
+      <div>
+        <p class="text-[13px] font-bold text-[#0F172A]">Usuarios del tenant</p>
+        <p class="text-[12px] text-[#64748B] mt-1">Gestiona roles y estado de acceso.</p>
+      </div>
+
+      <div class="relative w-full sm:w-72">
+        <svg class="w-4 h-4 absolute left-3 top-3 text-[#94A3B8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Buscar usuario o rol..." [value]="query()" (input)="updateQuery($event)" class="w-full border border-[#E2E8F0] rounded-lg pl-9 pr-3 py-2 text-[13px] bg-[#F8FAFC] focus:bg-white focus:outline-none focus:border-primary-500" />
+      </div>
+    </div>
+
+    <p *ngIf="adminUsers.error()" class="mx-5 mt-4 text-[12px] text-[#991B1B] bg-[#FEF2F2] border border-[#FECACA] rounded-lg px-3 py-2">
+      {{ adminUsers.error() }}
+    </p>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+            <th class="py-3 px-5 text-[12px] font-semibold text-[#64748B] tracking-wider uppercase">Usuario</th>
+            <th class="py-3 px-5 text-[12px] font-semibold text-[#64748B] tracking-wider uppercase">Rol</th>
+            <th class="py-3 px-5 text-[12px] font-semibold text-[#64748B] tracking-wider uppercase">Estado</th>
+            <th class="py-3 px-5 text-[12px] font-semibold text-[#64748B] tracking-wider uppercase text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[#E2E8F0]">
+          <tr *ngFor="let user of filteredUsers()" class="hover:bg-[#F8FAFC]">
+            <td class="py-3 px-5">
+              <p class="text-[14px] font-bold text-[#0F172A]">{{ user.displayName }}</p>
+              <p class="text-[12px] text-[#64748B]">{{ user.email }}</p>
+            </td>
+            <td class="py-3 px-5">
+              <select [value]="user.role" (change)="setRole(user, $any($event.target).value)" [disabled]="editingUserId() === user.id" class="border border-[#E2E8F0] rounded-lg px-3 py-2 text-[13px] bg-white">
+                <option *ngFor="let role of roles" [value]="role.code">{{ role.label }}</option>
+              </select>
+            </td>
+            <td class="py-3 px-5">
+              <span class="inline-flex items-center rounded-full px-2.5 py-1 text-[12px] font-semibold border" [class.bg-[#ECFDF5]]="user.isActive" [class.text-[#047857]]="user.isActive" [class.border-[#A7F3D0]]="user.isActive" [class.bg-[#F8FAFC]]="!user.isActive" [class.text-[#64748B]]="!user.isActive" [class.border-[#CBD5E1]]="!user.isActive">
+                {{ user.isActive ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="py-3 px-5 text-right">
+              <button type="button" (click)="setActive(user, !user.isActive)" [disabled]="editingUserId() === user.id" class="text-[13px] font-semibold text-primary-600 hover:text-primary-800 disabled:opacity-60">
+                {{ user.isActive ? 'Desactivar' : 'Activar' }}
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="!adminUsers.loading() && filteredUsers().length === 0">
+            <td colspan="4" class="py-8 px-5 text-center text-[13px] text-[#94A3B8]">No hay usuarios para mostrar.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

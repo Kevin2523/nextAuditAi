@@ -6,6 +6,7 @@ import { IamModule } from './modules/iam/iam.module';
 import { TenantsModule } from './modules/tenants/tenants.module';
 import { AlertsModule } from './modules/alerts/alerts.module';
 import { AiChatModule } from './modules/ai-chat/ai-chat.module';
+import { AdminUsersModule } from './modules/admin-users/admin-users.module';
 import { LlmGovernanceModule } from './modules/llm-governance/llm-governance.module';
 import { FleetReadModule } from './modules/fleet-read/fleet-read.module';
 import { ActivityModule } from './modules/activity/activity.module';
@@ -21,6 +22,7 @@ import { HealthModule } from './modules/health/health.module';
     TenantsModule,
     AlertsModule,
     AiChatModule,
+    AdminUsersModule,
     LlmGovernanceModule,
     FleetReadModule,
     ActivityModule,

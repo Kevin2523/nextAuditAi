@@ -31,14 +31,15 @@ export class Layout {
   readonly globalQuery = signal('');
   readonly notificationsOpen = signal(false);
 
-  sections = ['MENÚ PRINCIPAL', 'CONFIGURACIÓN Y AYUDA'];
+  sections = ['MENU PRINCIPAL', 'ADMINISTRACION', 'CONFIGURACION Y AYUDA'];
 
   navItems: NavItem[] = [
-    { label: 'Dashboard',             route: '/dashboard',     icon: 'layout-dashboard', section: 'MENÚ PRINCIPAL' },
-    { label: 'Inventario de Dispositivos', route: '/inventory',     icon: 'laptop',           section: 'MENÚ PRINCIPAL' },
-    { label: 'Registro de Actividad', route: '/history',       icon: 'activity',         section: 'MENÚ PRINCIPAL' },
-    { label: 'Asistente Virtual',     route: '/assistant',     icon: 'bot',              section: 'MENÚ PRINCIPAL', roles: ['admin', 'super_admin'] },
-    { label: 'Centro de Ayuda',       route: '/help-center',   icon: 'book',             section: 'CONFIGURACIÓN Y AYUDA' },
+    { label: 'Dashboard',             route: '/dashboard',     icon: 'layout-dashboard', section: 'MENU PRINCIPAL' },
+    { label: 'Inventario de Dispositivos', route: '/inventory',     icon: 'laptop',           section: 'MENU PRINCIPAL' },
+    { label: 'Registro de Actividad', route: '/history',       icon: 'activity',         section: 'MENU PRINCIPAL' },
+    { label: 'Asistente Virtual',     route: '/assistant',     icon: 'bot',              section: 'MENU PRINCIPAL', roles: ['admin', 'super_admin'] },
+    { label: 'Usuarios',              route: '/admin/users',   icon: 'users',            section: 'ADMINISTRACION', roles: ['super_admin'] },
+    { label: 'Centro de Ayuda',       route: '/help-center',   icon: 'book',             section: 'CONFIGURACION Y AYUDA' },
   ];
 
   constructor(private router: Router) {
