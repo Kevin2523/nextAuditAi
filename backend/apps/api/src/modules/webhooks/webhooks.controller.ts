@@ -15,3 +15,17 @@ export class WebhooksController {
     return this.n8nAlertWebhookService.receiveAlert(body, secretHeader);
   }
 }
+
+@Controller()
+export class LegacyWebhooksController {
+  constructor(private readonly n8nAlertWebhookService: N8nAlertWebhookService) {}
+
+  @Post('n8n-webhook')
+  @HttpCode(HttpStatus.ACCEPTED)
+  receiveLegacyN8nAlert(
+    @Body() body: N8nAlertWebhookDto,
+    @Headers('x-nextaudit-webhook-secret') secretHeader?: string,
+  ) {
+    return this.n8nAlertWebhookService.receiveAlert(body, secretHeader);
+  }
+}
