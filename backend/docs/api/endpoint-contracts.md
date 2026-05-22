@@ -64,6 +64,10 @@ Control de acceso:
 - `GET /api/v1/alerts/:id`
 - `PATCH /api/v1/alerts/:id/status`
 
+### `GET /api/v1/alerts`
+
+Lista las alertas persistidas en `telemetry.alerts` para el tenant del JWT. Esta ruta alimenta el Live Feed del Dashboard.
+
 ## Actividad de n8n
 
 - `GET /api/v1/activity/executions?limit=20`
@@ -79,6 +83,7 @@ Control de acceso:
 ## Webhooks
 
 - `POST /api/v1/webhooks/n8n/alerts`
+- `POST /n8n-webhook` alias temporal para flujos antiguos de n8n.
 
 Las solicitudes entrantes desde n8n deben incluir el header:
 
@@ -98,6 +103,20 @@ Durante la migracion, el payload conserva compatibilidad con los campos actuales
 ```
 
 El backend normaliza este payload y lo persiste en `telemetry.alerts`. Si no se envia `tenantId`, usa `DEFAULT_TENANT_ID`, que en desarrollo apunta al tenant local sembrado por la migracion inicial.
+
+Para el nodo HTTP Request de n8n, la URL recomendada en desarrollo es:
+
+```text
+http://host.docker.internal:3001/api/v1/webhooks/n8n/alerts
+```
+
+El alias temporal para workflows antiguos es:
+
+```text
+http://host.docker.internal:3001/n8n-webhook
+```
+
+Ambas rutas requieren el header `x-nextaudit-webhook-secret`.
 
 ## Chat de IA
 
@@ -119,8 +138,36 @@ Control de acceso:
 
 - `GET /api/v1/admin/users`
 - `POST /api/v1/admin/users`
-- `PATCH /api/v1/admin/users/:id/role`
+- `PATCH /api/v1/admin/users/:userId`
 - `GET /api/v1/admin/audit-logs`
 - `GET /api/v1/admin/llm-keys`
 - `POST /api/v1/admin/llm-keys`
 - `DELETE /api/v1/admin/llm-keys/:id`
+
+### `GET /api/v1/admin/users`
+
+Lista los usuarios del tenant actual. Requiere rol `super_admin`.
+
+### `POST /api/v1/admin/users`
+
+Payload:
+
+```json
+{
+  "email": "usuario@nextaudit.local",
+  "displayName": "Usuario Local",
+  "password": "Temporal123!",
+  "role": "viewer",
+  "isActive": true
+}
+```
+
+Roles validos:
+
+- `viewer`: puede ver datos, pero no puede usar IA.
+- `admin`: puede ver datos y usar IA.
+- `super_admin`: puede administrar usuarios, llaves y controles internos.
+
+### `PATCH /api/v1/admin/users/:userId`
+
+Permite cambiar `displayName`, `role` e `isActive` para usuarios del tenant actual. Requiere rol `super_admin`.
