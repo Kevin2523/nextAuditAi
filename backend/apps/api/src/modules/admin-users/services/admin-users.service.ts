@@ -74,7 +74,7 @@ export class AdminUsersService {
     return this.findUserInTenant(tenantId, user.id);
   }
 
-  async updateUser(tenantId: string, userId: string, dto: UpdateAdminUserDto) {
+  async updateUser(tenantId: string, actorUserId: string, userId: string, dto: UpdateAdminUserDto) {
     const membership = await this.prisma.membership.findUnique({
       where: {
         tenantId_userId: {
@@ -86,6 +86,10 @@ export class AdminUsersService {
 
     if (!membership) {
       throw new NotFoundException('Usuario no encontrado en este tenant.');
+    }
+
+    if (actorUserId === userId && (dto.role !== undefined || dto.isActive !== undefined)) {
+      throw new BadRequestException('No puedes cambiar tu propio rol ni desactivar tu propia cuenta.');
     }
 
     if (dto.displayName !== undefined || dto.isActive !== undefined) {

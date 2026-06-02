@@ -26,6 +26,6 @@ export class AdminUsersController {
 
   @Patch(':userId')
   updateUser(@CurrentUser() user: CurrentUser, @Param('userId') userId: string, @Body() body: UpdateAdminUserDto) {
-    return this.adminUsersService.updateUser(user.tenantId, userId, body);
+    return this.adminUsersService.updateUser(user.tenantId, user.sub, userId, body);
   }
 }
