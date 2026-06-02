@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminUser, AdminUsersService, CreateAdminUserRequest } from '../../services/admin-users.service';
-import { UserRole } from '../../services/auth.service';
+import { AuthService, UserRole } from '../../services/auth.service';
 
 @Component({
   selector: 'app-admin-users',
@@ -12,6 +12,7 @@ import { UserRole } from '../../services/auth.service';
 })
 export class AdminUsers {
   protected readonly adminUsers = inject(AdminUsersService);
+  protected readonly auth = inject(AuthService);
   protected readonly roles: Array<{ code: UserRole; label: string }> = [
     { code: 'viewer', label: 'Usuario comun' },
     { code: 'admin', label: 'Administrador' },
@@ -59,6 +60,10 @@ export class AdminUsers {
     this.query.set(target.value || '');
   }
 
+  setFormRole(role: UserRole) {
+    this.form.update((current) => ({ ...current, role }));
+  }
+
   createUser() {
     this.feedback.set(null);
 
@@ -78,12 +83,34 @@ export class AdminUsers {
   }
 
   setRole(user: AdminUser, role: UserRole) {
+    if (user.role === role) return;
+
     this.editingUserId.set(user.id);
     this.adminUsers.updateUser(user.id, { role }).subscribe({
       next: () => this.editingUserId.set(null),
       error: (error) => {
         this.editingUserId.set(null);
         this.adminUsers.error.set(error?.error?.message ?? 'No fue posible actualizar el rol.');
+      },
+    });
+  }
+
+  setDisplayName(user: AdminUser, event: Event) {
+    const target = event.target as HTMLInputElement;
+    const displayName = target.value.trim();
+
+    if (!displayName || displayName === user.displayName) {
+      target.value = user.displayName;
+      return;
+    }
+
+    this.editingUserId.set(user.id);
+    this.adminUsers.updateUser(user.id, { displayName }).subscribe({
+      next: () => this.editingUserId.set(null),
+      error: (error) => {
+        target.value = user.displayName;
+        this.editingUserId.set(null);
+        this.adminUsers.error.set(error?.error?.message ?? 'No fue posible actualizar el nombre.');
       },
     });
   }
@@ -101,5 +128,9 @@ export class AdminUsers {
 
   roleLabel(role: UserRole): string {
     return this.roles.find((item) => item.code === role)?.label ?? role;
+  }
+
+  isCurrentUser(user: AdminUser): boolean {
+    return this.auth.currentUserSignal()?.id === user.id;
   }
 }
