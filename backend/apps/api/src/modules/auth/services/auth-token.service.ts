@@ -10,6 +10,11 @@ export interface AccessTokenClaims {
   tenant_id: string;
 }
 
+export interface MfaTempTokenClaims {
+  sub: string;
+  purpose: 'mfa_login';
+}
+
 @Injectable()
 export class AuthTokenService {
   constructor(
@@ -22,6 +27,25 @@ export class AuthTokenService {
       secret: this.getRequiredConfig('JWT_ACCESS_SECRET'),
       expiresIn: this.config.get<string>('JWT_ACCESS_TTL') ?? '15m',
     });
+  }
+
+  async signMfaTempToken(claims: MfaTempTokenClaims): Promise<string> {
+    return this.jwtService.signAsync(claims, {
+      secret: this.getRequiredConfig('JWT_ACCESS_SECRET'),
+      expiresIn: '5m',
+    });
+  }
+
+  async verifyMfaTempToken(token: string): Promise<MfaTempTokenClaims> {
+    const claims = await this.jwtService.verifyAsync<MfaTempTokenClaims>(token, {
+      secret: this.getRequiredConfig('JWT_ACCESS_SECRET'),
+    });
+
+    if (claims.purpose !== 'mfa_login') {
+      throw new Error('Token temporal invalido.');
+    }
+
+    return claims;
   }
 
   generateRefreshToken(): string {

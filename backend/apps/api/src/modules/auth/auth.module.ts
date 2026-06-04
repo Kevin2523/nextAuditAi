@@ -4,11 +4,12 @@ import { IamModule } from '../iam/iam.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './services/auth.service';
 import { AuthTokenService } from './services/auth-token.service';
+import { PasswordResetMailService } from './services/password-reset-mail.service';
 
 @Module({
   imports: [IamModule, JwtModule.register({})],
   controllers: [AuthController],
-  providers: [AuthService, AuthTokenService],
+  providers: [AuthService, AuthTokenService, PasswordResetMailService],
   exports: [AuthTokenService, JwtModule],
 })
 export class AuthModule {}
