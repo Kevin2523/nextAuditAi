@@ -5,13 +5,15 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
+import { OnInit } from '@angular/core';
+
 @Component({
   selector: 'app-login',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './login.html',
 })
-export class Login {
+export class Login implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -29,6 +31,12 @@ export class Login {
     password: ['', [Validators.required]],
     otp: [''],
   });
+
+  ngOnInit() {
+    if (this.route.snapshot.queryParamMap.get('timeout') === 'true') {
+      this.error.set('Tu sesión ha expirado por inactividad.');
+    }
+  }
 
   submit(): void {
     if (this.loading()) {
