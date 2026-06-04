@@ -1,0 +1,3 @@
+ALTER TABLE "iam"."users"
+ADD COLUMN IF NOT EXISTS "failed_login_attempts" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS "locked_until" TIMESTAMP(3);

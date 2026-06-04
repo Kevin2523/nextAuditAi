@@ -60,6 +60,12 @@ model User {
   displayName    String         @map("display_name")
   passwordHash   String         @map("password_hash")
   isActive       Boolean        @default(true) @map("is_active")
+  failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
+  lockedUntil    DateTime?      @map("locked_until")
+  resetPasswordToken String?    @map("reset_password_token")
+  resetPasswordExpires DateTime? @map("reset_password_expires")
+  mfaSecret      String?        @map("mfa_secret")
+  isMfaEnabled   Boolean        @default(false) @map("is_mfa_enabled")
   createdAt      DateTime       @default(now()) @map("created_at")
   updatedAt      DateTime       @updatedAt @map("updated_at")
 
