@@ -1,51 +1,97 @@
-<main class="min-h-screen bg-[#F8FAFC] flex items-center justify-center px-6">
-  <section class="w-full max-w-[420px] bg-white border border-[#E2E8F0] rounded-lg shadow-sm p-8">
+<main class="min-h-screen bg-[#050816] text-white flex items-center justify-center px-6 py-10">
+  <section class="w-full max-w-[460px] rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-[0_30px_120px_rgba(2,6,23,0.6)] p-8">
     <div class="mb-8">
       <div class="flex items-center gap-3 mb-5">
-        <div class="w-9 h-9 rounded-lg bg-primary-600 flex items-center justify-center text-white">
+        <div class="w-10 h-10 rounded-xl bg-primary-600/90 flex items-center justify-center text-white shadow-lg shadow-primary-600/25">
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
           </svg>
         </div>
         <div>
-          <p class="font-display text-[18px] font-extrabold text-[#0F172A] leading-tight">NextAudit AI</p>
-          <p class="text-[12px] text-[#64748B]">Acceso seguro SaaS</p>
+          <p class="font-display text-[18px] font-extrabold text-white leading-tight">NextAudit AI</p>
+          <p class="text-[12px] text-slate-400">Acceso seguro SaaS</p>
         </div>
       </div>
 
-      <h1 class="text-xl font-bold text-[#0F172A]">Iniciar sesion</h1>
-      <p class="text-sm text-[#64748B] mt-1">Usa tu cuenta asignada para acceder a la consola.</p>
+      <h1 class="text-2xl font-bold text-white tracking-tight">Iniciar sesión</h1>
+      <p class="text-sm text-slate-400 mt-1">
+        @if (mfaMode()) {
+          Ingresa el código OTP de tu aplicación de autenticación.
+        } @else {
+          Usa tu cuenta asignada para acceder a la consola.
+        }
+      </p>
     </div>
 
+    @if (error()) {
+      <div class="mb-5 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+        {{ error() }}
+      </div>
+    }
+
+    @if (info()) {
+      <div class="mb-5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-sm text-cyan-100">
+        {{ info() }}
+      </div>
+    }
+
     <form class="space-y-5" [formGroup]="form" (ngSubmit)="submit()">
-      <label class="block">
-        <span class="block text-[13px] font-semibold text-[#334155] mb-2">Correo</span>
-        <input
-          type="email"
-          formControlName="email"
-          autocomplete="email"
-          class="w-full h-11 rounded-lg border border-[#CBD5E1] px-3 text-sm text-[#0F172A] outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"
-        />
-      </label>
+      @if (!mfaMode()) {
+        <label class="block">
+          <span class="block text-[13px] font-semibold text-slate-200 mb-2">Correo</span>
+          <input
+            type="email"
+            formControlName="email"
+            autocomplete="email"
+            class="w-full h-11 rounded-xl border border-white/10 bg-slate-950/70 px-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20"
+          />
+        </label>
 
-      <label class="block">
-        <span class="block text-[13px] font-semibold text-[#334155] mb-2">Contrasena</span>
-        <input
-          type="password"
-          formControlName="password"
-          autocomplete="current-password"
-          class="w-full h-11 rounded-lg border border-[#CBD5E1] px-3 text-sm text-[#0F172A] outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"
-        />
-      </label>
+        <label class="block">
+          <span class="block text-[13px] font-semibold text-slate-200 mb-2">Contraseña</span>
+          <input
+            type="password"
+            formControlName="password"
+            autocomplete="current-password"
+            class="w-full h-11 rounded-xl border border-white/10 bg-slate-950/70 px-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20"
+          />
+        </label>
 
-      <p *ngIf="error()" class="text-sm text-red-600">{{ error() }}</p>
+        <div class="flex items-center justify-end text-[13px] text-slate-400">
+          <a routerLink="/forgot-password" class="hover:text-cyan-300 transition-colors">¿Olvidaste tu contraseña?</a>
+        </div>
+      } @else {
+        <label class="block">
+          <span class="block text-[13px] font-semibold text-slate-200 mb-2">Código OTP</span>
+          <input
+            type="text"
+            formControlName="otp"
+            inputmode="numeric"
+            maxlength="6"
+            autocomplete="one-time-code"
+            placeholder="123456"
+            class="w-full h-11 rounded-xl border border-white/10 bg-slate-950/70 px-3 text-sm text-white tracking-[0.35em] text-center outline-none placeholder:text-slate-500 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20"
+          />
+        </label>
+        <button type="button" (click)="backToCredentials()" class="text-[13px] text-slate-400 hover:text-cyan-300 transition-colors">
+          Volver a credenciales
+        </button>
+      }
 
       <button
         type="submit"
         [disabled]="loading()"
-        class="w-full h-11 rounded-lg bg-primary-600 text-white text-sm font-bold hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+        class="w-full h-11 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-sm font-bold shadow-lg shadow-cyan-500/20 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
       >
-        {{ loading() ? 'Validando...' : 'Entrar' }}
+        @if (loading()) {
+          Validando...
+        } @else {
+          @if (mfaMode()) {
+            Verificar OTP
+          } @else {
+            Entrar
+          }
+        }
       </button>
     </form>
   </section>
