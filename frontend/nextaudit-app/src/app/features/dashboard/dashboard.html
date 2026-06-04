@@ -96,4 +96,76 @@
       }
     </div>
   </div>
+
+  <div class="saas-card p-6">
+    <div class="flex items-start justify-between gap-4 mb-6">
+      <div>
+        <h3 class="font-display text-base font-bold text-[#0F172A]">Autenticación de dos pasos</h3>
+        <p class="text-[13px] text-[#64748B] mt-1">Activa MFA con una app TOTP para reforzar el acceso al sistema.</p>
+      </div>
+      @if (auth.hasMfaEnabled()) {
+        <span class="text-[12px] font-medium text-[#065F46] bg-[#ECFDF5] border border-[#A7F3D0] rounded-full px-3 py-1">MFA activo</span>
+      }
+    </div>
+
+    @if (!auth.hasMfaEnabled()) {
+      <div class="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-6">
+        <div class="space-y-4">
+          <button (click)="startMfaSetup()" class="px-4 py-2.5 rounded-lg bg-[#0F172A] text-white text-[13px] font-semibold hover:bg-[#1E293B] transition-colors disabled:opacity-60" [disabled]="mfaLoading()">
+            {{ mfaLoading() ? 'Generando...' : 'Generar código QR' }}
+          </button>
+
+          @if (mfaError()) {
+            <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ mfaError() }}</div>
+          }
+          @if (mfaMessage()) {
+            <div class="rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-800">{{ mfaMessage() }}</div>
+          }
+
+          <label class="block">
+            <span class="block text-[13px] font-semibold text-[#334155] mb-2">Código OTP</span>
+            <input
+              type="text"
+              inputmode="numeric"
+              maxlength="6"
+              [value]="mfaOtp()"
+              (input)="mfaOtp.set(($any($event.target)).value)"
+              class="w-full h-11 rounded-lg border border-[#CBD5E1] px-3 text-sm text-[#0F172A] outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"
+            />
+          </label>
+
+          <button
+            (click)="enableMfa()"
+            class="px-4 py-2.5 rounded-lg bg-primary-600 text-white text-[13px] font-semibold hover:bg-primary-700 transition-colors disabled:opacity-60"
+            [disabled]="mfaLoading() || !mfaSetup()"
+          >
+            Confirmar y activar
+          </button>
+        </div>
+
+        <div class="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-4 min-h-[280px] flex items-center justify-center">
+          @if (mfaSetup()?.qrCodeDataUrl) {
+            <img [src]="mfaSetup()!.qrCodeDataUrl" alt="Codigo QR MFA" class="max-w-full max-h-[250px] object-contain" />
+          } @else {
+            <p class="text-[13px] text-[#94A3B8] text-center">Genera el secreto para mostrar el QR de configuración.</p>
+          }
+        </div>
+      </div>
+    } @else {
+      <div class="mt-4 flex flex-col gap-4">
+        @if (mfaError()) {
+          <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ mfaError() }}</div>
+        }
+        @if (mfaMessage()) {
+          <div class="rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-800">{{ mfaMessage() }}</div>
+        }
+        <div class="flex items-center justify-between">
+          <p class="text-[13px] text-[#64748B]">La configuración de MFA ya está activa para esta cuenta.</p>
+          <button (click)="disableMfa()" class="px-4 py-2 rounded-lg border border-red-200 text-red-600 bg-red-50 text-[13px] font-semibold hover:bg-red-100 transition-colors disabled:opacity-60" [disabled]="mfaLoading()">
+            {{ mfaLoading() ? 'Desactivando...' : 'Desactivar MFA' }}
+          </button>
+        </div>
+      </div>
+    }
+  </div>
 </div>
