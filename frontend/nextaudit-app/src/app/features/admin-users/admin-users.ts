@@ -26,6 +26,17 @@ export class AdminUsers {
     role: 'viewer',
     isActive: true,
   });
+
+  readonly passwordRules = computed(() => {
+    const pw = this.form().password;
+    return {
+      length: pw.length >= 12,
+      uppercase: /[A-Z]/.test(pw),
+      lowercase: /[a-z]/.test(pw),
+      number: /[0-9]/.test(pw),
+      special: /[^A-Za-z0-9]/.test(pw),
+    };
+  });
   readonly query = signal('');
   readonly editingUserId = signal<string | null>(null);
   readonly feedback = signal<string | null>(null);
