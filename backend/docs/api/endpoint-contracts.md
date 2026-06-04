@@ -5,6 +5,11 @@ Estos contratos definen el objetivo de migracion. La implementacion de endpoints
 ## Auth
 
 - `POST /api/v1/auth/login`
+- `POST /api/v1/auth/login/mfa-verify`
+- `POST /api/v1/auth/forgot-password`
+- `POST /api/v1/auth/reset-password`
+- `POST /api/v1/auth/mfa/generate`
+- `POST /api/v1/auth/mfa/enable`
 - `POST /api/v1/auth/refresh`
 - `POST /api/v1/auth/logout`
 - `GET /api/v1/auth/me`
@@ -34,6 +39,75 @@ Respuesta:
     "role": "super_admin",
     "tenantId": "uuid"
   }
+}
+```
+
+Si el usuario tiene MFA activo, la respuesta no entrega tokens finales:
+
+```json
+{
+  "mfaRequired": true,
+  "tempToken": "jwt_temporal"
+}
+```
+
+### `POST /api/v1/auth/login/mfa-verify`
+
+Payload:
+
+```json
+{
+  "tempToken": "jwt_temporal",
+  "otp": "123456"
+}
+```
+
+Si el OTP es valido, devuelve `accessToken`, `refreshToken` y `user`.
+
+No existe registro publico de usuarios. La creacion de cuentas se realiza exclusivamente desde `POST /api/v1/admin/users`, protegido por rol `super_admin`.
+
+### `POST /api/v1/auth/forgot-password`
+
+Genera un token temporal de recuperacion con expiracion de 15 minutos y responde siempre con un mensaje generico. El token no se expone al navegador ni a la respuesta JSON; el backend envia un enlace a `/reset-password?token=...` mediante SMTP cuando `SMTP_HOST` y `SMTP_FROM` estan configurados.
+
+```json
+{
+  "email": "usuario@nextaudit.local"
+}
+```
+
+Respuesta:
+
+```json
+{
+  "message": "Si el correo existe, se envio un enlace temporal para restablecer la contraseña."
+}
+```
+
+### `POST /api/v1/auth/reset-password`
+
+Payload:
+
+```json
+{
+  "token": "token_temporal",
+  "password": "NuevaClave123!"
+}
+```
+
+La nueva contrasena debe cumplir la politica estricta: minimo 12 caracteres, mayuscula, minuscula, numero y simbolo.
+
+### `POST /api/v1/auth/mfa/generate`
+
+Requiere JWT. Genera `mfaSecret`, URL `otpauth://` y QR en `data:image/png;base64`.
+
+### `POST /api/v1/auth/mfa/enable`
+
+Requiere JWT. Activa MFA si el OTP de 6 digitos es valido.
+
+```json
+{
+  "otp": "123456"
 }
 ```
 
