@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService, PASSWORD_POLICY_REGEX } from '../../services/auth.service';
@@ -23,6 +24,19 @@ export class ResetPassword {
     token: [this.route.snapshot.queryParamMap.get('token') ?? '', [Validators.required]],
     password: ['', [Validators.required, Validators.pattern(PASSWORD_POLICY_REGEX)]],
     confirmPassword: ['', [Validators.required]],
+  });
+
+  readonly passwordValue = toSignal(this.form.controls.password.valueChanges, { initialValue: '' });
+
+  readonly passwordRules = computed(() => {
+    const pw = this.passwordValue();
+    return {
+      length: pw.length >= 12,
+      uppercase: /[A-Z]/.test(pw),
+      lowercase: /[a-z]/.test(pw),
+      number: /[0-9]/.test(pw),
+      special: /[^A-Za-z0-9]/.test(pw),
+    };
   });
 
   submit(): void {
