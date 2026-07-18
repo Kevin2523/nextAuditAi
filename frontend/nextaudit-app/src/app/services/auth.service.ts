@@ -1,6 +1,10 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map, tap } from 'rxjs';
+import type {
+  PublicKeyCredentialCreationOptionsJSON,
+  PublicKeyCredentialRequestOptionsJSON,
+} from '@simplewebauthn/types';
 
 export type UserRole = 'viewer' | 'admin' | 'super_admin';
 export const PASSWORD_POLICY_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{12,}$/;
@@ -73,6 +77,30 @@ export interface MfaSetupResponse {
   secret: string;
   otpauthUrl: string;
   qrCodeDataUrl: string;
+}
+
+export interface PasskeyRegisterBeginResponse {
+  sessionId: string;
+  options: PublicKeyCredentialCreationOptionsJSON;
+  deviceName?: string;
+}
+
+export interface PasskeyRegisterCompleteResponse {
+  message: string;
+}
+
+export interface PasskeyLoginBeginResponse {
+  sessionId: string;
+  options: PublicKeyCredentialRequestOptionsJSON;
+}
+
+export interface PasskeyInfo {
+  id: string;
+  deviceName: string | null;
+  deviceType: string | null;
+  backedUp: boolean;
+  createdAt: string;
+  lastUsedAt: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -187,6 +215,41 @@ export class AuthService {
         return user;
       }),
     );
+  }
+
+  passkeyRegisterBegin(deviceName?: string): Observable<PasskeyRegisterBeginResponse> {
+    return this.http.post<PasskeyRegisterBeginResponse>('/api/v1/auth/passkey/register/begin', { deviceName });
+  }
+
+  passkeyRegisterComplete(sessionId: string, response: unknown, deviceName?: string): Observable<PasskeyRegisterCompleteResponse> {
+    return this.http.post<PasskeyRegisterCompleteResponse>('/api/v1/auth/passkey/register/complete', {
+      sessionId,
+      ...(response as Record<string, unknown>),
+      deviceName,
+    });
+  }
+
+  passkeyLoginBegin(email: string): Observable<PasskeyLoginBeginResponse> {
+    return this.http.post<PasskeyLoginBeginResponse>('/api/v1/auth/passkey/login/begin', { email });
+  }
+
+  passkeyLoginComplete(sessionId: string, response: unknown): Observable<LoginSuccessResponse> {
+    return this.http.post<LoginSuccessResponse>('/api/v1/auth/passkey/login/complete', {
+      sessionId,
+      ...(response as Record<string, unknown>),
+    }).pipe(
+      tap((loginResponse) => {
+        this.storeSession(loginResponse.accessToken, loginResponse.refreshToken, loginResponse.user.id);
+      }),
+    );
+  }
+
+  listPasskeys(): Observable<PasskeyInfo[]> {
+    return this.http.get<PasskeyInfo[]>('/api/v1/auth/passkey');
+  }
+
+  deletePasskey(id: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`/api/v1/auth/passkey/${id}`);
   }
 
   logout(): void {

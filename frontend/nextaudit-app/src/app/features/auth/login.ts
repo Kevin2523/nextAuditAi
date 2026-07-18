@@ -4,6 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { WebAuthnService } from '../../services/webauthn.service';
 
 import { OnInit } from '@angular/core';
 
@@ -18,6 +19,7 @@ export class Login implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
+  private readonly webauthn = inject(WebAuthnService);
 
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
@@ -25,6 +27,8 @@ export class Login implements OnInit {
   readonly mfaMode = signal(false);
   readonly tempToken = signal<string | null>(null);
   readonly showForgotLink = signal(true);
+  readonly passkeySupported = this.webauthn.isSupported();
+  readonly passkeyLoading = signal(false);
 
   readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
@@ -100,6 +104,49 @@ export class Login implements OnInit {
         this.navigateToReturnUrl();
       },
       error: (error: unknown) => this.handleError(error),
+    });
+  }
+
+  async passkeyLogin(): Promise<void> {
+    if (!this.webauthn.isSupported()) {
+      this.error.set('Tu navegador no soporta WebAuthn (Face ID / Huella / Passkey).');
+      return;
+    }
+
+    const email = this.form.controls.email.value.trim();
+    if (!email) {
+      this.error.set('Ingresa tu correo primero.');
+      return;
+    }
+
+    this.passkeyLoading.set(true);
+    this.error.set(null);
+    this.info.set('Esperando verificación biométrica...');
+
+    this.auth.passkeyLoginBegin(email).subscribe({
+      next: async (beginResponse) => {
+        try {
+          const authResponse = await this.webauthn.authenticate(beginResponse.options);
+          this.auth.passkeyLoginComplete(beginResponse.sessionId, authResponse).subscribe({
+            next: () => {
+              this.passkeyLoading.set(false);
+              this.navigateToReturnUrl();
+            },
+            error: (err) => {
+              this.passkeyLoading.set(false);
+              this.handleError(err);
+            },
+          });
+        } catch (err: unknown) {
+          this.passkeyLoading.set(false);
+          const msg = err instanceof Error ? err.message : 'Autenticación cancelada.';
+          this.error.set(msg);
+        }
+      },
+      error: (err) => {
+        this.passkeyLoading.set(false);
+        this.handleError(err);
+      },
     });
   }
 
