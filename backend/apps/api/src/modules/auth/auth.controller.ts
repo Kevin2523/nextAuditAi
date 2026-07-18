@@ -1,15 +1,25 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { MfaEnableDto, MfaVerifyLoginDto } from './dto/mfa.dto';
+import {
+  PasskeyRegisterBeginDto,
+  PasskeyRegisterCompleteDto,
+  PasskeyLoginBeginDto,
+  PasskeyLoginCompleteDto,
+} from './dto/passkey.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AuthService } from './services/auth.service';
+import { PasskeyService } from './services/passkey.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly passkeyService: PasskeyService,
+  ) {}
 
   @Post('login')
   login(@Body() body: LoginDto) {
@@ -47,5 +57,39 @@ export class AuthController {
   @Post('login/mfa-verify')
   verifyMfaLogin(@Body() body: MfaVerifyLoginDto) {
     return this.authService.verifyMfaLogin(body);
+  }
+
+  @Post('passkey/register/begin')
+  @UseGuards(JwtAuthGuard)
+  passkeyRegisterBegin(@CurrentUser() user: CurrentUser, @Body() body: PasskeyRegisterBeginDto) {
+    return this.passkeyService.generateRegistrationOptions(user.sub, body.deviceName);
+  }
+
+  @Post('passkey/register/complete')
+  @UseGuards(JwtAuthGuard)
+  passkeyRegisterComplete(@CurrentUser() user: CurrentUser, @Body() body: PasskeyRegisterCompleteDto) {
+    return this.passkeyService.verifyRegistration(user.sub, body);
+  }
+
+  @Post('passkey/login/begin')
+  passkeyLoginBegin(@Body() body: PasskeyLoginBeginDto) {
+    return this.passkeyService.generateLoginOptions(body.email);
+  }
+
+  @Post('passkey/login/complete')
+  passkeyLoginComplete(@Body() body: PasskeyLoginCompleteDto) {
+    return this.passkeyService.verifyLogin(body);
+  }
+
+  @Get('passkey')
+  @UseGuards(JwtAuthGuard)
+  listPasskeys(@CurrentUser() user: CurrentUser) {
+    return this.passkeyService.listPasskeys(user.sub);
+  }
+
+  @Delete('passkey/:id')
+  @UseGuards(JwtAuthGuard)
+  deletePasskey(@CurrentUser() user: CurrentUser, @Param('id') id: string) {
+    return this.passkeyService.deletePasskey(id, user.sub);
   }
 }

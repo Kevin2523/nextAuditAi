@@ -71,6 +71,7 @@ model User {
 
   memberships    Membership[]
   refreshTokens  RefreshToken[]
+  passkeys       Passkey[]
 
   @@map("users")
   @@schema("iam")
@@ -149,6 +150,26 @@ model RefreshToken {
   @@index([userId])
   @@index([expiresAt])
   @@map("refresh_tokens")
+  @@schema("iam")
+}
+
+model Passkey {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  credentialId String    @unique @map("credential_id")
+  publicKey    Bytes     @map("public_key")
+  counter      BigInt    @default(0) @map("counter")
+  transports   String?   @map("transports")
+  deviceName   String?   @map("device_name")
+  deviceType   String?   @map("device_type")
+  backedUp     Boolean   @default(false) @map("backed_up")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  lastUsedAt   DateTime? @map("last_used_at")
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("passkeys")
   @@schema("iam")
 }
 
