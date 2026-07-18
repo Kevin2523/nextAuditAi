@@ -23,7 +23,7 @@ export class AdminUsersService {
     });
 
     return {
-      users: memberships.map((membership) => ({
+      users: memberships.map((membership: { id: string; user: { id: string; email: string; displayName: string; isActive: boolean; createdAt: Date; updatedAt: Date }; role: { code: string } }) => ({
         id: membership.user.id,
         membershipId: membership.id,
         email: membership.user.email,
