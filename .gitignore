@@ -54,3 +54,12 @@ Thumbs.db
 tmp/
 temp/
 .cache/
+
+# Documents
+*.pdf
+**.docx
+documentos_para_entregas
+documentos para entregas/
+
+# Windows reserved names
+nul

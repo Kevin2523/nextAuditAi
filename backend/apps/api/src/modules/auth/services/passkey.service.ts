@@ -18,7 +18,7 @@ import type {
   VerifyAuthenticationResponseOpts,
 } from '@simplewebauthn/server';
 import type { Passkey } from '@prisma/client';
-import crypto from 'node:crypto';
+import { randomUUID } from 'crypto';
 import type { PasskeyRegisterCompleteDto, PasskeyLoginCompleteDto } from '../dto/passkey.dto';
 
 const RP_NAME = 'NextAudit AI';
@@ -64,7 +64,7 @@ export class PasskeyService {
     };
 
     const options = await generateRegistrationOptions(opts);
-    const sessionId = crypto.randomUUID();
+    const sessionId = randomUUID();
     this.challengeStore.set(sessionId, {
       challenge: options.challenge,
       userId,
@@ -142,7 +142,7 @@ export class PasskeyService {
     };
 
     const options = await generateAuthenticationOptions(opts);
-    const sessionId = crypto.randomUUID();
+    const sessionId = randomUUID();
     this.challengeStore.set(sessionId, { challenge: options.challenge, email: user.email });
     setTimeout(() => this.challengeStore.delete(sessionId), CHALLENGE_TTL_MS);
 
