@@ -4,9 +4,8 @@ import { RouterLink } from '@angular/router';
 import { FleetService } from '../../services/fleet.service';
 import { ActivityService } from '../../services/activity.service';
 import { AuditoriaComponent } from '../audit/auditoria';
-import { AuthService, MfaSetupResponse } from '../../services/auth.service';
+import { AuthService } from '../../services/auth.service';
 import { AlertsService } from '../../services/alerts.service';
-import { signal } from '@angular/core';
 
 interface WeeklySecurityPoint {
   label: string;
@@ -28,11 +27,6 @@ export class Dashboard {
   protected readonly activity = inject(ActivityService);
   protected readonly auth = inject(AuthService);
   protected readonly alerts = inject(AlertsService);
-  readonly mfaSetup = signal<MfaSetupResponse | null>(null);
-  readonly mfaOtp = signal('');
-  readonly mfaLoading = signal(false);
-  readonly mfaError = signal<string | null>(null);
-  readonly mfaMessage = signal<string | null>(null);
 
   readonly metrics = computed(() => [
     {
@@ -121,63 +115,6 @@ export class Dashboard {
 
     return `0,200 ${points.map((point) => `${point.x},${point.y}`).join(' ')} 1000,200`;
   });
-
-  startMfaSetup(): void {
-    this.mfaLoading.set(true);
-    this.mfaError.set(null);
-    this.mfaMessage.set(null);
-
-    this.auth.generateMfa().subscribe({
-      next: (response) => {
-        this.mfaSetup.set(response);
-        this.mfaLoading.set(false);
-        this.mfaMessage.set('Escanea el código QR con tu app de autenticación.');
-      },
-      error: () => {
-        this.mfaError.set('No se pudo generar el secreto MFA.');
-        this.mfaLoading.set(false);
-      },
-    });
-  }
-
-  enableMfa(): void {
-    const otp = this.mfaOtp().trim();
-    if (!/^\d{6}$/.test(otp)) {
-      this.mfaError.set('El código OTP debe tener 6 dígitos.');
-      return;
-    }
-
-    this.mfaLoading.set(true);
-    this.mfaError.set(null);
-
-    this.auth.enableMfa({ otp }).subscribe({
-      next: () => {
-        this.mfaMessage.set('MFA activado correctamente.');
-        this.mfaLoading.set(false);
-      },
-      error: () => {
-        this.mfaError.set('No se pudo activar MFA.');
-        this.mfaLoading.set(false);
-      },
-    });
-  }
-
-  disableMfa(): void {
-    this.mfaLoading.set(true);
-    this.mfaError.set(null);
-    this.mfaMessage.set(null);
-
-    this.auth.disableMfa().subscribe({
-      next: () => {
-        this.mfaMessage.set('MFA ha sido desactivado exitosamente.');
-        this.mfaLoading.set(false);
-      },
-      error: () => {
-        this.mfaError.set('No se pudo desactivar MFA.');
-        this.mfaLoading.set(false);
-      },
-    });
-  }
 
   downloadReport() {
     const generatedAt = new Date().toISOString();

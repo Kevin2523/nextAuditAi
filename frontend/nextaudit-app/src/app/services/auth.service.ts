@@ -1,6 +1,10 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map, tap } from 'rxjs';
+import type {
+  PublicKeyCredentialCreationOptionsJSON,
+  PublicKeyCredentialRequestOptionsJSON,
+} from '@simplewebauthn/types';
 
 export type UserRole = 'viewer' | 'admin' | 'super_admin';
 export const PASSWORD_POLICY_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{12,}$/;
@@ -10,6 +14,7 @@ export interface JwtClaims {
   email: string;
   role: UserRole;
   tenant_id: string;
+  displayName?: string;
   exp?: number;
   iat?: number;
 }
@@ -19,6 +24,7 @@ export interface CurrentUser {
   email: string;
   role: UserRole;
   tenantId: string;
+  displayName?: string;
   isMfaEnabled: boolean;
 }
 
@@ -44,12 +50,14 @@ export interface LoginSuccessResponse {
 export interface LoginMfaRequiredResponse {
   mfaRequired: true;
   tempToken: string;
+  hasMfaTotp?: boolean;
+  hasPasskeys?: boolean;
 }
 
 export type LoginResponse = LoginSuccessResponse | LoginMfaRequiredResponse;
 export type LoginOutcome =
   | { kind: 'authenticated'; user: CurrentUser }
-  | { kind: 'mfa-required'; tempToken: string };
+  | { kind: 'mfa-required'; tempToken: string; hasMfaTotp: boolean; hasPasskeys: boolean };
 
 export interface ForgotPasswordRequest {
   email: string;
@@ -73,6 +81,30 @@ export interface MfaSetupResponse {
   secret: string;
   otpauthUrl: string;
   qrCodeDataUrl: string;
+}
+
+export interface PasskeyRegisterBeginResponse {
+  sessionId: string;
+  options: PublicKeyCredentialCreationOptionsJSON;
+  deviceName?: string;
+}
+
+export interface PasskeyRegisterCompleteResponse {
+  message: string;
+}
+
+export interface PasskeyLoginBeginResponse {
+  sessionId: string;
+  options: PublicKeyCredentialRequestOptionsJSON;
+}
+
+export interface PasskeyInfo {
+  id: string;
+  deviceName: string | null;
+  deviceType: string | null;
+  backedUp: boolean;
+  createdAt: string;
+  lastUsedAt: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -105,6 +137,7 @@ export class AuthService {
       email: claims.email,
       role: claims.role,
       tenantId: claims.tenant_id,
+      displayName: claims.displayName,
       isMfaEnabled: this.mfaEnabledSignal(),
     };
   });
@@ -135,7 +168,7 @@ export class AuthService {
       }),
       map((response) => {
         if ('mfaRequired' in response) {
-          return { kind: 'mfa-required', tempToken: response.tempToken } as const;
+          return { kind: 'mfa-required', tempToken: response.tempToken, hasMfaTotp: response.hasMfaTotp ?? false, hasPasskeys: response.hasPasskeys ?? false } as const;
         }
 
         const user = this.currentUserSignal();
@@ -185,6 +218,73 @@ export class AuthService {
           throw new Error('No se pudo completar la verificacion MFA.');
         }
         return user;
+      }),
+    );
+  }
+
+  passkeyRegisterBegin(deviceName?: string, authenticatorAttachment?: 'platform' | 'cross-platform'): Observable<PasskeyRegisterBeginResponse> {
+    return this.http.post<PasskeyRegisterBeginResponse>('/api/v1/auth/passkey/register/begin', { deviceName, authenticatorAttachment });
+  }
+
+  passkeyRegisterComplete(sessionId: string, response: unknown, deviceName?: string): Observable<PasskeyRegisterCompleteResponse> {
+    return this.http.post<PasskeyRegisterCompleteResponse>('/api/v1/auth/passkey/register/complete', {
+      sessionId,
+      ...(response as Record<string, unknown>),
+      deviceName,
+    });
+  }
+
+  passkeyLoginBegin(email: string): Observable<PasskeyLoginBeginResponse> {
+    return this.http.post<PasskeyLoginBeginResponse>('/api/v1/auth/passkey/login/begin', { email });
+  }
+
+  passkeyLoginComplete(sessionId: string, response: unknown): Observable<LoginSuccessResponse> {
+    return this.http.post<LoginSuccessResponse>('/api/v1/auth/passkey/login/complete', {
+      sessionId,
+      ...(response as Record<string, unknown>),
+    }).pipe(
+      tap((loginResponse) => {
+        this.storeSession(loginResponse.accessToken, loginResponse.refreshToken, loginResponse.user.id);
+      }),
+    );
+  }
+
+  passkeyMfaLoginBegin(tempToken: string): Observable<PasskeyLoginBeginResponse> {
+    return this.http.post<PasskeyLoginBeginResponse>('/api/v1/auth/login/mfa-passkey-begin', { tempToken });
+  }
+
+  passkeyMfaLoginComplete(sessionId: string, response: unknown, tempToken: string): Observable<LoginSuccessResponse> {
+    return this.http.post<LoginSuccessResponse>('/api/v1/auth/login/mfa-passkey-complete', {
+      sessionId,
+      tempToken,
+      ...(response as Record<string, unknown>),
+    }).pipe(
+      tap((loginResponse) => {
+        this.storeSession(loginResponse.accessToken, loginResponse.refreshToken, loginResponse.user.id);
+      }),
+    );
+  }
+
+  listPasskeys(): Observable<PasskeyInfo[]> {
+    return this.http.get<PasskeyInfo[]>('/api/v1/auth/passkey');
+  }
+
+  deletePasskey(id: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`/api/v1/auth/passkey/${id}`);
+  }
+
+  updateProfile(dto: { displayName?: string; email?: string; currentPassword: string }): Observable<LoginSuccessResponse & { reauthenticate?: boolean }> {
+    return this.http.patch<LoginSuccessResponse & { reauthenticate?: boolean }>('/api/v1/auth/profile', dto).pipe(
+      tap((response) => {
+        this.storeSession(response.accessToken, response.refreshToken, response.user.id, Boolean(response.user.isMfaEnabled));
+      }),
+    );
+  }
+
+  changePassword(dto: { currentPassword: string; newPassword: string }): Observable<LoginSuccessResponse & { reauthenticate?: boolean }> {
+    return this.http.post<LoginSuccessResponse & { reauthenticate?: boolean }>('/api/v1/auth/change-password', dto).pipe(
+      tap((response) => {
+        this.storeSession(response.accessToken, response.refreshToken, response.user.id, Boolean(response.user.isMfaEnabled));
       }),
     );
   }

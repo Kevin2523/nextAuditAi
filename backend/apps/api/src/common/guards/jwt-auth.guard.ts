@@ -7,6 +7,7 @@ type JwtClaims = {
   email: string;
   role: string;
   tenant_id: string;
+  displayName?: string;
 };
 
 @Injectable()
@@ -44,6 +45,7 @@ export class JwtAuthGuard implements CanActivate {
         email: claims.email,
         role: claims.role,
         tenantId: claims.tenant_id,
+        displayName: claims.displayName,
       };
     } catch {
       throw new UnauthorizedException('Token invalido o expirado.');

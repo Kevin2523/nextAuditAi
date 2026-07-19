@@ -1,13 +1,15 @@
-import { BadRequestException, HttpException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, HttpException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { createHash, randomBytes } from 'node:crypto';
 import { generateSecret, generateURI, verify } from 'otplib';
 import * as QRCode from 'qrcode';
 import { PrismaService } from '../../../persistence/prisma/prisma.service';
 import { UserPasswordService } from '../../iam/services/user-password.service';
+import type { ChangePasswordDto } from '../dto/change-password.dto';
 import type { ForgotPasswordDto } from '../dto/forgot-password.dto';
 import type { LoginDto } from '../dto/login.dto';
 import type { MfaEnableDto, MfaVerifyLoginDto } from '../dto/mfa.dto';
 import type { ResetPasswordDto } from '../dto/reset-password.dto';
+import type { UpdateProfileDto } from '../dto/update-profile.dto';
 import { AuthTokenService } from './auth-token.service';
 import { PasswordResetMailService } from './password-reset-mail.service';
 
@@ -65,13 +67,17 @@ export class AuthService {
       },
     });
 
-    if (user.isMfaEnabled) {
+    const passkeyCount = await this.prisma.passkey.count({ where: { userId: user.id } });
+
+    if (user.isMfaEnabled || passkeyCount > 0) {
       return {
         mfaRequired: true,
         tempToken: await this.tokenService.signMfaTempToken({
           sub: user.id,
           purpose: 'mfa_login',
         }),
+        hasMfaTotp: user.isMfaEnabled,
+        hasPasskeys: passkeyCount > 0,
       };
     }
 
@@ -223,6 +229,83 @@ export class AuthService {
     return this.issueFinalTokens(user.id);
   }
 
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+
+    const passwordMatches = await this.passwordService.verifyPassword(dto.currentPassword, user.passwordHash);
+    if (!passwordMatches) {
+      throw new UnauthorizedException('Contrasena actual incorrecta.');
+    }
+
+    const data: Record<string, unknown> = {};
+    let emailChanged = false;
+
+    if (dto.displayName !== undefined) {
+      data.displayName = dto.displayName.trim();
+    }
+
+    if (dto.email !== undefined) {
+      const newEmail = dto.email.toLowerCase().trim();
+      if (newEmail !== user.email) {
+        const existing = await this.prisma.user.findUnique({ where: { email: newEmail } });
+        if (existing) {
+          throw new ConflictException('El correo electronico ya esta en uso.');
+        }
+        data.email = newEmail;
+        emailChanged = true;
+      }
+    }
+
+    if (Object.keys(data).length === 0) {
+      return { message: 'Sin cambios para actualizar.' };
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data,
+    });
+
+    if (emailChanged) {
+      await this.prisma.refreshToken.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+    }
+
+    const result = await this.issueFinalTokens(userId);
+    return {
+      ...result,
+      reauthenticate: emailChanged,
+    };
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+
+    const passwordMatches = await this.passwordService.verifyPassword(dto.currentPassword, user.passwordHash);
+    if (!passwordMatches) {
+      throw new UnauthorizedException('Contrasena actual incorrecta.');
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        passwordHash: await this.passwordService.hashPassword(dto.newPassword),
+      },
+    });
+
+    await this.prisma.refreshToken.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+
+    const result = await this.issueFinalTokens(userId);
+    return {
+      ...result,
+      reauthenticate: true,
+    };
+  }
+
   private assertNotLocked(lockedUntil: Date | null): void {
     if (lockedUntil && lockedUntil.getTime() > Date.now()) {
       throw new HttpException('Cuenta temporalmente bloqueada.', HTTP_LOCKED);
@@ -266,6 +349,7 @@ export class AuthService {
       email: user.email,
       role: membership.role.code,
       tenant_id: membership.tenantId,
+      displayName: user.displayName,
     });
 
     const refreshToken = this.tokenService.generateRefreshToken();

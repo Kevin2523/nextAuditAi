@@ -1,9 +1,16 @@
 import { BadRequestException, Injectable, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { timingSafeEqual } from 'node:crypto';
-import { AlertSeverity, Prisma } from '@prisma/client';
 import { PrismaService } from '../../../persistence/prisma/prisma.service';
 import type { N8nAlertWebhookDto } from '../dto/n8n-alert-webhook.dto';
+
+enum AlertSeverity {
+  info = 'info',
+  low = 'low',
+  medium = 'medium',
+  high = 'high',
+  critical = 'critical',
+}
 
 const TENANT_LOCAL_POR_DEFECTO = '00000000-0000-4000-8000-000000000001';
 
@@ -90,7 +97,7 @@ export class N8nAlertWebhookService {
     return date;
   }
 
-  private buildRawPayload(dto: N8nAlertWebhookDto): Prisma.InputJsonObject {
+  private buildRawPayload(dto: N8nAlertWebhookDto) {
     return {
       ...dto.raw,
       tenantId: dto.tenantId,
