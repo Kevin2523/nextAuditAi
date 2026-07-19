@@ -5,6 +5,7 @@ import { filter } from 'rxjs/operators';
 import { AuditNotification, AuditNotificationService } from '../services/audit-notification.service';
 import { ChatDrawerService } from '../services/chat-drawer.service';
 import { Assistant } from '../features/assistant/assistant';
+import { SettingsPanel } from '../features/settings/settings-panel';
 import { AuthService, UserRole } from '../services/auth.service';
 
 interface NavItem {
@@ -18,7 +19,7 @@ interface NavItem {
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, Assistant],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, Assistant, SettingsPanel],
   templateUrl: './layout.html',
   styleUrl: './layout.css'
 })
@@ -30,6 +31,7 @@ export class Layout {
   currentTitle = 'Dashboard';
   readonly globalQuery = signal('');
   readonly notificationsOpen = signal(false);
+  readonly settingsOpen = signal(false);
 
   sections = ['MENU PRINCIPAL', 'ADMINISTRACION', 'CONFIGURACION Y AYUDA'];
 
@@ -74,6 +76,10 @@ export class Layout {
 
   toggleNotifications() {
     this.notificationsOpen.update((open) => !open);
+  }
+
+  toggleSettings() {
+    this.settingsOpen.update((open) => !open);
   }
 
   openNotification(notification: AuditNotification) {

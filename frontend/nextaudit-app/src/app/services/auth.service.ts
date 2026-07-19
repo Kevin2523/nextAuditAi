@@ -14,6 +14,7 @@ export interface JwtClaims {
   email: string;
   role: UserRole;
   tenant_id: string;
+  displayName?: string;
   exp?: number;
   iat?: number;
 }
@@ -23,6 +24,7 @@ export interface CurrentUser {
   email: string;
   role: UserRole;
   tenantId: string;
+  displayName?: string;
   isMfaEnabled: boolean;
 }
 
@@ -133,6 +135,7 @@ export class AuthService {
       email: claims.email,
       role: claims.role,
       tenantId: claims.tenant_id,
+      displayName: claims.displayName,
       isMfaEnabled: this.mfaEnabledSignal(),
     };
   });
@@ -250,6 +253,22 @@ export class AuthService {
 
   deletePasskey(id: string): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`/api/v1/auth/passkey/${id}`);
+  }
+
+  updateProfile(dto: { displayName?: string; email?: string; currentPassword: string }): Observable<LoginSuccessResponse & { reauthenticate?: boolean }> {
+    return this.http.patch<LoginSuccessResponse & { reauthenticate?: boolean }>('/api/v1/auth/profile', dto).pipe(
+      tap((response) => {
+        this.storeSession(response.accessToken, response.refreshToken, response.user.id, Boolean(response.user.isMfaEnabled));
+      }),
+    );
+  }
+
+  changePassword(dto: { currentPassword: string; newPassword: string }): Observable<LoginSuccessResponse & { reauthenticate?: boolean }> {
+    return this.http.post<LoginSuccessResponse & { reauthenticate?: boolean }>('/api/v1/auth/change-password', dto).pipe(
+      tap((response) => {
+        this.storeSession(response.accessToken, response.refreshToken, response.user.id, Boolean(response.user.isMfaEnabled));
+      }),
+    );
   }
 
   logout(): void {

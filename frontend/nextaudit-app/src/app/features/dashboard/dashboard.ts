@@ -1,11 +1,10 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FleetService } from '../../services/fleet.service';
 import { ActivityService } from '../../services/activity.service';
 import { AuditoriaComponent } from '../audit/auditoria';
-import { AuthService, MfaSetupResponse, PasskeyInfo } from '../../services/auth.service';
-import { WebAuthnService } from '../../services/webauthn.service';
+import { AuthService } from '../../services/auth.service';
 import { AlertsService } from '../../services/alerts.service';
 
 interface WeeklySecurityPoint {
@@ -28,18 +27,6 @@ export class Dashboard {
   protected readonly activity = inject(ActivityService);
   protected readonly auth = inject(AuthService);
   protected readonly alerts = inject(AlertsService);
-  protected readonly webauthn = inject(WebAuthnService);
-
-  readonly mfaSetup = signal<MfaSetupResponse | null>(null);
-  readonly mfaOtp = signal('');
-  readonly mfaLoading = signal(false);
-  readonly mfaError = signal<string | null>(null);
-  readonly mfaMessage = signal<string | null>(null);
-
-  readonly passkeys = signal<PasskeyInfo[]>([]);
-  readonly passkeyLoading = signal(false);
-  readonly passkeyError = signal<string | null>(null);
-  readonly passkeyMessage = signal<string | null>(null);
 
   readonly metrics = computed(() => [
     {
@@ -128,120 +115,6 @@ export class Dashboard {
 
     return `0,200 ${points.map((point) => `${point.x},${point.y}`).join(' ')} 1000,200`;
   });
-
-  startMfaSetup(): void {
-    this.mfaLoading.set(true);
-    this.mfaError.set(null);
-    this.mfaMessage.set(null);
-
-    this.auth.generateMfa().subscribe({
-      next: (response) => {
-        this.mfaSetup.set(response);
-        this.mfaLoading.set(false);
-        this.mfaMessage.set('Escanea el código QR con tu app de autenticación.');
-      },
-      error: () => {
-        this.mfaError.set('No se pudo generar el secreto MFA.');
-        this.mfaLoading.set(false);
-      },
-    });
-  }
-
-  enableMfa(): void {
-    const otp = this.mfaOtp().trim();
-    if (!/^\d{6}$/.test(otp)) {
-      this.mfaError.set('El código OTP debe tener 6 dígitos.');
-      return;
-    }
-
-    this.mfaLoading.set(true);
-    this.mfaError.set(null);
-
-    this.auth.enableMfa({ otp }).subscribe({
-      next: () => {
-        this.mfaMessage.set('MFA activado correctamente.');
-        this.mfaLoading.set(false);
-      },
-      error: () => {
-        this.mfaError.set('No se pudo activar MFA.');
-        this.mfaLoading.set(false);
-      },
-    });
-  }
-
-  disableMfa(): void {
-    this.mfaLoading.set(true);
-    this.mfaError.set(null);
-    this.mfaMessage.set(null);
-
-    this.auth.disableMfa().subscribe({
-      next: () => {
-        this.mfaMessage.set('MFA ha sido desactivado exitosamente.');
-        this.mfaLoading.set(false);
-      },
-      error: () => {
-        this.mfaError.set('No se pudo desactivar MFA.');
-        this.mfaLoading.set(false);
-      },
-    });
-  }
-
-  loadPasskeys(): void {
-    this.auth.listPasskeys().subscribe({
-      next: (keys) => this.passkeys.set(keys),
-      error: () => this.passkeys.set([]),
-    });
-  }
-
-  async registerPasskey(deviceName?: string): Promise<void> {
-    if (!this.webauthn.isSupported()) {
-      this.passkeyError.set('Tu navegador no soporta WebAuthn (Face ID / Huella / Passkey).');
-      return;
-    }
-
-    this.passkeyLoading.set(true);
-    this.passkeyError.set(null);
-    this.passkeyMessage.set(null);
-
-    this.auth.passkeyRegisterBegin(deviceName).subscribe({
-      next: async (beginResponse) => {
-        try {
-          const regResponse = await this.webauthn.register(beginResponse.options);
-          this.auth.passkeyRegisterComplete(beginResponse.sessionId, regResponse, deviceName).subscribe({
-            next: () => {
-              this.passkeyMessage.set('Passkey registrada exitosamente.');
-              this.passkeyLoading.set(false);
-              this.loadPasskeys();
-            },
-            error: (err) => {
-              this.passkeyError.set('Error al completar el registro de passkey.');
-              this.passkeyLoading.set(false);
-            },
-          });
-        } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : 'Registro cancelado por el usuario.';
-          this.passkeyError.set(msg);
-          this.passkeyLoading.set(false);
-        }
-      },
-      error: () => {
-        this.passkeyError.set('Error al iniciar el registro de passkey.');
-        this.passkeyLoading.set(false);
-      },
-    });
-  }
-
-  deletePasskey(id: string): void {
-    this.auth.deletePasskey(id).subscribe({
-      next: () => {
-        this.passkeyMessage.set('Passkey eliminada.');
-        this.loadPasskeys();
-      },
-      error: () => {
-        this.passkeyError.set('Error al eliminar la passkey.');
-      },
-    });
-  }
 
   downloadReport() {
     const generatedAt = new Date().toISOString();

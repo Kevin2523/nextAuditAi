@@ -45,10 +45,10 @@
     <!-- Bottom Account (Minimalist) -->
     <div class="border-t border-[#F1F5F9] p-4 shrink-0">
       <div class="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-[#F1F5F9] transition-colors">
-        <img [src]="'https://ui-avatars.com/api/?name=' + (auth.currentUserSignal()?.email || 'Usuario') + '&background=2563EB&color=fff&rounded=true'" alt="User" class="w-9 h-9 rounded-full shadow-sm" />
+        <img [src]="'https://ui-avatars.com/api/?name=' + (auth.currentUserSignal()?.displayName || auth.currentUserSignal()?.email || 'Usuario') + '&background=2563EB&color=fff&rounded=true'" alt="User" class="w-9 h-9 rounded-full shadow-sm" />
         <div class="overflow-hidden">
-          <p class="text-[14px] font-semibold text-[#0F172A] leading-tight truncate">{{auth.currentUserSignal()?.email}}</p>
-          <p class="text-[12px] text-[#64748B] leading-tight">{{auth.currentUserSignal()?.role}}</p>
+          <p class="text-[14px] font-semibold text-[#0F172A] leading-tight truncate">{{auth.currentUserSignal()?.displayName || auth.currentUserSignal()?.email}}</p>
+          <p class="text-[12px] text-[#64748B] leading-tight truncate">{{auth.currentUserSignal()?.email}}</p>
         </div>
         <button (click)="logout()" title="Cerrar sesion" class="ml-auto w-8 h-8 rounded-full flex items-center justify-center text-[#64748B] hover:bg-white hover:text-[#0F172A] transition-colors">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -74,6 +74,14 @@
       </div>
 
       <div class="flex items-center gap-4 ml-6">
+        <!-- Configuracion MFA -->
+        <button (click)="toggleSettings()" class="w-10 h-10 rounded-full border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A] transition-colors" title="Configuracion de seguridad">
+          <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.32 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+          </svg>
+        </button>
+
         <!-- Notificaciones -->
         <div class="relative">
           <button (click)="toggleNotifications()" class="relative w-10 h-10 rounded-full border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A] transition-colors">
@@ -182,6 +190,46 @@
     <!-- Assistant embedded -->
     <div class="flex-1 overflow-hidden p-4">
       <app-assistant class="block h-full"></app-assistant>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SETTINGS DRAWER OVERLAY
+  ============================================================ -->
+  <!-- Backdrop -->
+  <div
+    *ngIf="settingsOpen()"
+    (click)="toggleSettings()"
+    class="fixed inset-0 bg-black/30 z-[90] backdrop-blur-[2px] transition-opacity"
+  ></div>
+
+  <!-- Drawer Panel -->
+  <div
+    class="fixed top-0 right-0 h-full w-[520px] max-w-full bg-[#F8FAFC] shadow-2xl z-[100] flex flex-col transform transition-transform duration-300 ease-in-out"
+    [class.translate-x-0]="settingsOpen()"
+    [class.translate-x-full]="!settingsOpen()"
+  >
+    <!-- Drawer Header -->
+    <div class="h-14 bg-white border-b border-[#E2E8F0] flex items-center justify-between px-6 shrink-0 shadow-sm">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.32 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+          </svg>
+        </div>
+        <div>
+          <p class="text-[14px] font-bold text-[#0F172A] leading-tight">Configuración</p>
+          <p class="text-[11px] text-[#64748B]">Seguridad de la cuenta</p>
+        </div>
+      </div>
+      <button (click)="toggleSettings()" class="w-9 h-9 rounded-full flex items-center justify-center text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A] transition-colors">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <!-- Settings panel content -->
+    <div class="flex-1 overflow-y-auto p-6">
+      <app-settings-panel></app-settings-panel>
     </div>
   </div>
 
