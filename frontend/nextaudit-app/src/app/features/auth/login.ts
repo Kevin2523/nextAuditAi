@@ -27,7 +27,8 @@ export class Login implements OnInit {
   readonly mfaMode = signal(false);
   readonly tempToken = signal<string | null>(null);
   readonly showForgotLink = signal(true);
-  readonly passkeySupported = this.webauthn.isSupported();
+  readonly hasMfaTotp = signal(false);
+  readonly hasPasskeys = signal(false);
   readonly passkeyLoading = signal(false);
 
   readonly form = this.fb.nonNullable.group({
@@ -95,8 +96,9 @@ export class Login implements OnInit {
         if (result.kind === 'mfa-required') {
           this.mfaMode.set(true);
           this.tempToken.set(result.tempToken);
+          this.hasMfaTotp.set(result.hasMfaTotp);
+          this.hasPasskeys.set(result.hasPasskeys);
           this.form.controls.otp.setValue('');
-          this.info.set('Se requiere verificacion MFA. Ingresa el codigo OTP de 6 digitos.');
           this.loading.set(false);
           return;
         }
@@ -107,15 +109,15 @@ export class Login implements OnInit {
     });
   }
 
-  async passkeyLogin(): Promise<void> {
+  async passkeyMfaLogin(): Promise<void> {
     if (!this.webauthn.isSupported()) {
       this.error.set('Tu navegador no soporta WebAuthn (Face ID / Huella / Passkey).');
       return;
     }
 
-    const email = this.form.controls.email.value.trim();
-    if (!email) {
-      this.error.set('Ingresa tu correo primero.');
+    const currentTempToken = this.tempToken();
+    if (!currentTempToken) {
+      this.error.set('No se encontro el token temporal de MFA.');
       return;
     }
 
@@ -123,11 +125,11 @@ export class Login implements OnInit {
     this.error.set(null);
     this.info.set('Esperando verificación biométrica...');
 
-    this.auth.passkeyLoginBegin(email).subscribe({
+    this.auth.passkeyMfaLoginBegin(currentTempToken).subscribe({
       next: async (beginResponse) => {
         try {
           const authResponse = await this.webauthn.authenticate(beginResponse.options);
-          this.auth.passkeyLoginComplete(beginResponse.sessionId, authResponse).subscribe({
+          this.auth.passkeyMfaLoginComplete(beginResponse.sessionId, authResponse, currentTempToken).subscribe({
             next: () => {
               this.passkeyLoading.set(false);
               this.navigateToReturnUrl();
@@ -167,8 +169,12 @@ export class Login implements OnInit {
     const response = error instanceof HttpErrorResponse ? error : null;
     if (response?.status === 423) {
       this.error.set('Cuenta bloqueada temporalmente por múltiples intentos fallidos. Espere 15 segundos.');
-    } else if (response?.status === 401 && this.mfaMode()) {
+    } else if (response?.status === 401 && this.mfaMode() && !this.passkeyLoading()) {
       this.error.set('Codigo OTP invalido o expirado.');
+    } else if (response?.status === 401 && this.passkeyLoading()) {
+      this.error.set('Verificación biométrica fallida. Intenta de nuevo.');
+    } else if (response?.status === 400) {
+      this.error.set(response.error?.message ?? 'Solicitud invalida.');
     } else {
       this.error.set('Credenciales invalidas o servicio no disponible.');
     }

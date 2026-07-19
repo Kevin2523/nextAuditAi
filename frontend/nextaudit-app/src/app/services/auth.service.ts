@@ -50,12 +50,14 @@ export interface LoginSuccessResponse {
 export interface LoginMfaRequiredResponse {
   mfaRequired: true;
   tempToken: string;
+  hasMfaTotp?: boolean;
+  hasPasskeys?: boolean;
 }
 
 export type LoginResponse = LoginSuccessResponse | LoginMfaRequiredResponse;
 export type LoginOutcome =
   | { kind: 'authenticated'; user: CurrentUser }
-  | { kind: 'mfa-required'; tempToken: string };
+  | { kind: 'mfa-required'; tempToken: string; hasMfaTotp: boolean; hasPasskeys: boolean };
 
 export interface ForgotPasswordRequest {
   email: string;
@@ -166,7 +168,7 @@ export class AuthService {
       }),
       map((response) => {
         if ('mfaRequired' in response) {
-          return { kind: 'mfa-required', tempToken: response.tempToken } as const;
+          return { kind: 'mfa-required', tempToken: response.tempToken, hasMfaTotp: response.hasMfaTotp ?? false, hasPasskeys: response.hasPasskeys ?? false } as const;
         }
 
         const user = this.currentUserSignal();
@@ -220,8 +222,8 @@ export class AuthService {
     );
   }
 
-  passkeyRegisterBegin(deviceName?: string): Observable<PasskeyRegisterBeginResponse> {
-    return this.http.post<PasskeyRegisterBeginResponse>('/api/v1/auth/passkey/register/begin', { deviceName });
+  passkeyRegisterBegin(deviceName?: string, authenticatorAttachment?: 'platform' | 'cross-platform'): Observable<PasskeyRegisterBeginResponse> {
+    return this.http.post<PasskeyRegisterBeginResponse>('/api/v1/auth/passkey/register/begin', { deviceName, authenticatorAttachment });
   }
 
   passkeyRegisterComplete(sessionId: string, response: unknown, deviceName?: string): Observable<PasskeyRegisterCompleteResponse> {
@@ -239,6 +241,22 @@ export class AuthService {
   passkeyLoginComplete(sessionId: string, response: unknown): Observable<LoginSuccessResponse> {
     return this.http.post<LoginSuccessResponse>('/api/v1/auth/passkey/login/complete', {
       sessionId,
+      ...(response as Record<string, unknown>),
+    }).pipe(
+      tap((loginResponse) => {
+        this.storeSession(loginResponse.accessToken, loginResponse.refreshToken, loginResponse.user.id);
+      }),
+    );
+  }
+
+  passkeyMfaLoginBegin(tempToken: string): Observable<PasskeyLoginBeginResponse> {
+    return this.http.post<PasskeyLoginBeginResponse>('/api/v1/auth/login/mfa-passkey-begin', { tempToken });
+  }
+
+  passkeyMfaLoginComplete(sessionId: string, response: unknown, tempToken: string): Observable<LoginSuccessResponse> {
+    return this.http.post<LoginSuccessResponse>('/api/v1/auth/login/mfa-passkey-complete', {
+      sessionId,
+      tempToken,
       ...(response as Record<string, unknown>),
     }).pipe(
       tap((loginResponse) => {
