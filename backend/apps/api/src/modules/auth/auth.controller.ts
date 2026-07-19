@@ -3,7 +3,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
-import { MfaEnableDto, MfaVerifyLoginDto } from './dto/mfa.dto';
+import { MfaEnableDto, MfaVerifyLoginDto, PasskeyMfaBeginDto, PasskeyMfaCompleteDto } from './dto/mfa.dto';
 import {
   PasskeyRegisterBeginDto,
   PasskeyRegisterCompleteDto,
@@ -79,6 +79,16 @@ export class AuthController {
   @Post('passkey/login/complete')
   passkeyLoginComplete(@Body() body: PasskeyLoginCompleteDto) {
     return this.passkeyService.verifyLogin(body);
+  }
+
+  @Post('login/mfa-passkey-begin')
+  mfaPasskeyBegin(@Body() body: PasskeyMfaBeginDto) {
+    return this.passkeyService.generateMfaLoginOptions(body.tempToken);
+  }
+
+  @Post('login/mfa-passkey-complete')
+  mfaPasskeyComplete(@Body() body: PasskeyMfaCompleteDto) {
+    return this.passkeyService.verifyMfaLogin(body);
   }
 
   @Get('passkey')

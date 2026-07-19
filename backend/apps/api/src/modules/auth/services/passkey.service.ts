@@ -20,6 +20,7 @@ import type {
 import type { Passkey } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import type { PasskeyRegisterCompleteDto, PasskeyLoginCompleteDto } from '../dto/passkey.dto';
+import type { PasskeyMfaCompleteDto } from '../dto/mfa.dto';
 
 const RP_NAME = 'NextAudit AI';
 const RP_ID = process.env.WEBAUTHN_RP_ID ?? 'localhost';
@@ -41,7 +42,7 @@ export class PasskeyService {
     private readonly tokenService: AuthTokenService,
   ) {}
 
-  async generateRegistrationOptions(userId: string, deviceName?: string) {
+  async generateRegistrationOptions(userId: string, deviceName?: string, authenticatorAttachment?: 'platform' | 'cross-platform') {
     const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
     const existing = await this.prisma.passkey.findMany({ where: { userId } });
 
@@ -59,7 +60,7 @@ export class PasskeyService {
       authenticatorSelection: {
         residentKey: 'preferred',
         userVerification: 'required',
-        authenticatorAttachment: 'cross-platform',
+        authenticatorAttachment: authenticatorAttachment ?? 'cross-platform',
       },
     };
 
@@ -158,6 +159,107 @@ export class PasskeyService {
 
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { email: data.email },
+      include: { memberships: { include: { role: true }, take: 1 } },
+    });
+
+    if (!user?.isActive) {
+      throw new UnauthorizedException('Credenciales invalidas.');
+    }
+
+    const passkey = await this.prisma.passkey.findUnique({
+      where: { credentialId: dto.id },
+    });
+
+    if (!passkey || passkey.userId !== user.id) {
+      throw new UnauthorizedException('Passkey no encontrada.');
+    }
+
+    const verification = await verifyAuthenticationResponse({
+      response: {
+        id: dto.id,
+        rawId: dto.rawId,
+        response: dto.response,
+        clientExtensionResults: {},
+        type: 'public-key',
+      },
+      expectedChallenge: data.challenge,
+      expectedOrigin: RP_ORIGIN,
+      expectedRPID: RP_ID,
+      authenticator: {
+        credentialID: passkey.credentialId,
+        credentialPublicKey: new Uint8Array(passkey.publicKey),
+        counter: Number(passkey.counter),
+        transports: passkey.transports ? (JSON.parse(passkey.transports) as AuthenticatorTransport[]) : undefined,
+      },
+    } satisfies VerifyAuthenticationResponseOpts);
+
+    if (!verification.verified) {
+      throw new UnauthorizedException('Verificacion de passkey fallida.');
+    }
+
+    await this.prisma.passkey.update({
+      where: { id: passkey.id },
+      data: {
+        counter: BigInt(verification.authenticationInfo.newCounter),
+        lastUsedAt: new Date(),
+      },
+    });
+
+    return this.issueFinalTokens(user.id);
+  }
+
+  async generateMfaLoginOptions(tempToken: string) {
+    let claims: { sub: string; purpose: string };
+    try {
+      claims = await this.tokenService.verifyMfaTempToken(tempToken);
+    } catch {
+      throw new UnauthorizedException('Token temporal MFA invalido o expirado.');
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id: claims.sub } });
+    if (!user?.isActive) {
+      throw new UnauthorizedException('Credenciales invalidas.');
+    }
+
+    const passkeys = await this.prisma.passkey.findMany({ where: { userId: user.id } });
+    if (passkeys.length === 0) {
+      throw new BadRequestException('No hay passkeys registradas para este usuario.');
+    }
+
+    const opts: GenerateAuthenticationOptionsOpts = {
+      rpID: RP_ID,
+      allowCredentials: passkeys.map((pk: { credentialId: string; transports: string | null }) => ({
+        id: pk.credentialId,
+        type: 'public-key',
+        transports: pk.transports ? (JSON.parse(pk.transports) as AuthenticatorTransport[]) : undefined,
+      })),
+      userVerification: 'required',
+    };
+
+    const options = await generateAuthenticationOptions(opts);
+    const sessionId = randomUUID();
+    this.challengeStore.set(sessionId, { challenge: options.challenge, userId: user.id });
+    setTimeout(() => this.challengeStore.delete(sessionId), CHALLENGE_TTL_MS);
+
+    return { sessionId, options };
+  }
+
+  async verifyMfaLogin(dto: PasskeyMfaCompleteDto) {
+    let claims: { sub: string; purpose: string };
+    try {
+      claims = await this.tokenService.verifyMfaTempToken(dto.tempToken);
+    } catch {
+      throw new UnauthorizedException('Token temporal MFA invalido o expirado.');
+    }
+
+    const data = this.challengeStore.get(dto.sessionId);
+    if (!data || data.userId !== claims.sub) {
+      throw new BadRequestException('Challenge expirado o invalido. Vuelve a intentarlo.');
+    }
+    this.challengeStore.delete(dto.sessionId);
+
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id: claims.sub },
       include: { memberships: { include: { role: true }, take: 1 } },
     });
 

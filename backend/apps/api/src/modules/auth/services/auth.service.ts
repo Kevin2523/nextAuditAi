@@ -65,13 +65,17 @@ export class AuthService {
       },
     });
 
-    if (user.isMfaEnabled) {
+    const passkeyCount = await this.prisma.passkey.count({ where: { userId: user.id } });
+
+    if (user.isMfaEnabled || passkeyCount > 0) {
       return {
         mfaRequired: true,
         tempToken: await this.tokenService.signMfaTempToken({
           sub: user.id,
           purpose: 'mfa_login',
         }),
+        hasMfaTotp: user.isMfaEnabled,
+        hasPasskeys: passkeyCount > 0,
       };
     }
 
