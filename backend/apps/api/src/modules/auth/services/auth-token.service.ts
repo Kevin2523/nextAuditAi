@@ -8,6 +8,7 @@ export interface AccessTokenClaims {
   email: string;
   role: string;
   tenant_id: string;
+  displayName?: string;
 }
 
 export interface MfaTempTokenClaims {

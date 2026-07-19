@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { MfaEnableDto, MfaVerifyLoginDto, PasskeyMfaBeginDto, PasskeyMfaCompleteDto } from './dto/mfa.dto';
@@ -11,6 +12,7 @@ import {
   PasskeyLoginCompleteDto,
 } from './dto/passkey.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { AuthService } from './services/auth.service';
 import { PasskeyService } from './services/passkey.service';
 
@@ -59,10 +61,22 @@ export class AuthController {
     return this.authService.verifyMfaLogin(body);
   }
 
+  @Patch('profile')
+  @UseGuards(JwtAuthGuard)
+  updateProfile(@CurrentUser() user: CurrentUser, @Body() body: UpdateProfileDto) {
+    return this.authService.updateProfile(user.sub, body);
+  }
+
+  @Post('change-password')
+  @UseGuards(JwtAuthGuard)
+  changePassword(@CurrentUser() user: CurrentUser, @Body() body: ChangePasswordDto) {
+    return this.authService.changePassword(user.sub, body);
+  }
+
   @Post('passkey/register/begin')
   @UseGuards(JwtAuthGuard)
   passkeyRegisterBegin(@CurrentUser() user: CurrentUser, @Body() body: PasskeyRegisterBeginDto) {
-    return this.passkeyService.generateRegistrationOptions(user.sub, body.deviceName);
+    return this.passkeyService.generateRegistrationOptions(user.sub, body.deviceName, body.authenticatorAttachment);
   }
 
   @Post('passkey/register/complete')

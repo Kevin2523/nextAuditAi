@@ -4,6 +4,10 @@ export class PasskeyRegisterBeginDto {
   @IsString()
   @IsOptional()
   deviceName?: string;
+
+  @IsString()
+  @IsOptional()
+  authenticatorAttachment?: 'platform' | 'cross-platform';
 }
 
 export class PasskeyRegisterCompleteDto {
