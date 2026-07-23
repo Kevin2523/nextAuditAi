@@ -1,42 +1,35 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { AdminUser, AdminUsersService, CreateAdminUserRequest } from '../../services/admin-users.service';
-import { AuthService, UserRole } from '../../services/auth.service';
+import { AuthService, UserRole, PASSWORD_POLICY_REGEX } from '../../services/auth.service';
 
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './admin-users.html',
 })
 export class AdminUsers {
   protected readonly adminUsers = inject(AdminUsersService);
   protected readonly auth = inject(AuthService);
+  private readonly fb = inject(FormBuilder);
+
   protected readonly roles: Array<{ code: UserRole; label: string }> = [
     { code: 'viewer', label: 'Usuario comun' },
     { code: 'admin', label: 'Administrador' },
     { code: 'super_admin', label: 'Super usuario' },
   ];
 
-  readonly form = signal<CreateAdminUserRequest>({
-    email: '',
-    displayName: '',
-    password: '',
-    role: 'viewer',
-    isActive: true,
+  readonly createUserForm = this.fb.nonNullable.group({
+    email: ['', [Validators.required, Validators.email]],
+    displayName: ['', Validators.required],
+    password: ['', [Validators.required, Validators.pattern(PASSWORD_POLICY_REGEX)]],
+    role: ['viewer', Validators.required],
+    isActive: [true],
   });
 
-  readonly passwordRules = computed(() => {
-    const pw = this.form().password;
-    return {
-      length: pw.length >= 12,
-      uppercase: /[A-Z]/.test(pw),
-      lowercase: /[a-z]/.test(pw),
-      number: /[0-9]/.test(pw),
-      special: /[^A-Za-z0-9]/.test(pw),
-    };
-  });
+  readonly passwordRules = signal({ length: false, uppercase: false, lowercase: false, number: false, special: false });
   readonly query = signal('');
   readonly editingUserId = signal<string | null>(null);
   readonly feedback = signal<string | null>(null);
@@ -58,12 +51,16 @@ export class AdminUsers {
     this.adminUsers.loadUsers().subscribe({
       error: () => this.adminUsers.error.set('No fue posible cargar los usuarios.'),
     });
-  }
 
-  updateField(field: keyof CreateAdminUserRequest, event: Event) {
-    const target = event.target as HTMLInputElement | HTMLSelectElement;
-    const value = field === 'isActive' ? (target as HTMLInputElement).checked : target.value;
-    this.form.update((current) => ({ ...current, [field]: value }));
+    this.createUserForm.get('password')?.valueChanges.subscribe(pw => {
+      this.passwordRules.set({
+        length: (pw ?? '').length >= 12,
+        uppercase: /[A-Z]/.test(pw ?? ''),
+        lowercase: /[a-z]/.test(pw ?? ''),
+        number: /[0-9]/.test(pw ?? ''),
+        special: /[^A-Za-z0-9]/.test(pw ?? ''),
+      });
+    });
   }
 
   updateQuery(event: Event) {
@@ -71,17 +68,20 @@ export class AdminUsers {
     this.query.set(target.value || '');
   }
 
-  setFormRole(role: UserRole) {
-    this.form.update((current) => ({ ...current, role }));
-  }
-
   createUser() {
     this.feedback.set(null);
 
-    this.adminUsers.createUser(this.form()).subscribe({
+    if (this.createUserForm.invalid) {
+      this.createUserForm.markAllAsTouched();
+      return;
+    }
+
+    const formValue = this.createUserForm.value;
+
+    this.adminUsers.createUser(formValue as CreateAdminUserRequest).subscribe({
       next: () => {
         this.feedback.set('Usuario creado correctamente.');
-        this.form.set({
+        this.createUserForm.reset({
           email: '',
           displayName: '',
           password: '',
