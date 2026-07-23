@@ -45,7 +45,7 @@ export class WafMiddleware implements NestMiddleware {
 
       res.status(403).json({
         statusCode: 403,
-        message: 'Solicitud bloqueada por el firewall de aplicacion.',
+        message: 'Buen intento crack. Eso no funcionara aqui.',
         error: 'Forbidden',
       });
       return;

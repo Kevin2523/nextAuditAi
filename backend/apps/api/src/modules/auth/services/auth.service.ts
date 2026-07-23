@@ -138,7 +138,7 @@ async forgotPassword(dto: ForgotPasswordDto) {
     const user = await this.prisma.user.findUnique({ where: { email } });
 
     const response = {
-      message: 'Si el correo existe, se envio un enlace temporal para restablecer la contraseÃƒÆ’Ã‚Â±a.',
+      message: 'Si el correo existe, se envio un enlace temporal para restablecer la contraseña.',
     };
 
     if (!user?.isActive) {

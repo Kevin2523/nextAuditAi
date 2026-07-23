@@ -30,6 +30,17 @@ export class PasskeyRegisterCompleteDto {
 
   @IsString()
   @IsOptional()
+  type?: string;
+
+  @IsOptional()
+  clientExtensionResults?: Record<string, unknown>;
+
+  @IsString()
+  @IsOptional()
+  authenticatorAttachment?: string;
+
+  @IsString()
+  @IsOptional()
   deviceName?: string;
 }
 

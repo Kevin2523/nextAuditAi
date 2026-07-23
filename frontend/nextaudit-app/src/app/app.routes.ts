@@ -47,6 +47,8 @@ export const routes: Routes = [
       },
       {
         path: 'security',
+        canActivate: [roleGuard],
+        data: { roles: ['super_admin'] },
         loadComponent: () => import('./features/security-monitoring/security-monitoring').then(m => m.SecurityMonitoring)
       },
       {

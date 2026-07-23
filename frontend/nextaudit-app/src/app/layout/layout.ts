@@ -40,7 +40,7 @@ export class Layout {
     { label: 'Inventario de Dispositivos', route: '/inventory',     icon: 'laptop',           section: 'MENU PRINCIPAL' },
     { label: 'Registro de Actividad', route: '/history',       icon: 'activity',         section: 'MENU PRINCIPAL' },
     { label: 'Asistente Virtual',     route: '/assistant',     icon: 'bot',              section: 'MENU PRINCIPAL', roles: ['admin', 'super_admin'] },
-    { label: 'Seguridad',             route: '/security',      icon: 'shield',           section: 'MENU PRINCIPAL' },
+    { label: 'Seguridad',             route: '/security',      icon: 'shield',           section: 'MENU PRINCIPAL', roles: ['super_admin'] },
     { label: 'Usuarios',              route: '/admin/users',   icon: 'users',            section: 'ADMINISTRACION', roles: ['super_admin'] },
     { label: 'Centro de Ayuda',       route: '/help-center',   icon: 'book',             section: 'CONFIGURACION Y AYUDA' },
   ];
