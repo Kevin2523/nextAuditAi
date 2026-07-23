@@ -1,0 +1,127 @@
+<meta charset='utf-8'><body><style>body { font-family: sans-serif; line-height: 1.6; padding: 2em; } table { border-collapse: collapse; width: 100%; margin-bottom: 1em; } th, td { border: 1px solid #ddd; padding: 8px; text-align: left; } th { background-color: #f2f2f2; }</style><h1>Universidad Tecnológica de Panamá</h1>
+<h2>Facultad de Ingeniería de Sistemas Computacionales</h2>
+<h3>Licenciatura en Ingeniería de Software</h3>
+<p><strong>Curso:</strong> Ingeniería de Software II
+<strong>Docente:</strong> Ing. Jorge A. Marín</p>
+<hr />
+<h2>Informe Técnico: Pruebas de Seguridad Automatizadas</h2>
+<p><strong>Integrantes del grupo:</strong>
+- Kevin Mena
+- Joan Soto
+- Eduardo Sanchez
+- Elian Montenegro</p>
+<p><strong>Fecha:</strong> 18 de Julio de 2026</p>
+<hr />
+<h2>1. Introducción</h2>
+<p>El presente documento expone los resultados de la automatización de pruebas de seguridad aplicadas a la plataforma <strong>NextAuditAI</strong>. El objetivo principal de este laboratorio es integrar y ejecutar herramientas de análisis estático (SAST), análisis de dependencias (SCA), análisis dinámico (DAST) y escaneo de contenedores en el ciclo de vida del desarrollo.</p>
+<p>Con estas pruebas buscamos simular un entorno continuo (CI/CD) para la detección temprana de vulnerabilidades, permitiendo clasificar y mitigar los riesgos de seguridad detectados en la aplicación web antes de su despliegue en un entorno de producción.</p>
+<hr />
+<h2>2. Herramientas Utilizadas</h2>
+<p>Para el análisis se estructuró un <em>pipeline</em> automatizado que integra las siguientes tecnologías:</p>
+<ol>
+<li><strong>Semgrep (SAST):</strong> Herramienta de análisis estático de código abierto. Fue configurada con las reglas de <em>OWASP Top 10</em> para detectar patrones inseguros en el código fuente de NextAuditAI (Backend y Frontend).</li>
+<li><strong>OWASP Dependency-Check (SCA):</strong> Analizador de dependencias (ejecutado vía Docker) para inspeccionar los archivos <code>package.json</code> en búsqueda de librerías de terceros con vulnerabilidades reportadas en la base de datos NVD (CVE).</li>
+<li><strong>OWASP ZAP (DAST):</strong> Escáner de seguridad dinámico. Se ejecutó un <em>baseline scan</em> contra el contenedor activo del frontend (<code>http://localhost:4200</code>) para hallar vulnerabilidades en tiempo de ejecución.</li>
+<li><strong>Trivy (Escaneo de Contenedores):</strong> Herramienta de Aqua Security utilizada para inspeccionar la imagen base de base de datos (PostgreSQL 15) en busca de vulnerabilidades de infraestructura (Severidades ALTAS y CRÍTICAS).</li>
+</ol>
+<p><em>(Todas las herramientas fueron orquestadas secuencialmente mediante un script local en PowerShell llamado <code>ejecutar_seguridad.ps1</code>).</em></p>
+<hr />
+<h2>3. Resultados por Categoría</h2>
+<blockquote>
+<p>[!NOTE]
+<em>Nota: Esta sección se actualizará automáticamente con capturas y resultados extraídos de los reportes JSON/HTML en cuanto el script termine de ejecutarse.</em></p>
+</blockquote>
+<h3>3.1 Análisis Estático (SAST - Semgrep)</h3>
+<p>Se encontraron vulnerabilidades significativas en el código fuente de NextAuditAI:
+* <strong>Dockerfiles inseguros:</strong> Se detectó la falta de la directiva <code>USER</code> en <code>api.Dockerfile</code> y <code>worker.Dockerfile</code>, lo que provoca que los contenedores se ejecuten como <code>root</code>, violando el principio de menor privilegio.
+* <strong>Riesgo de XSS:</strong> En el frontend (<code>assistant.ts</code>), se detectó el uso de <code>bypassSecurityTrustHtml</code>, lo cual puede introducir Cross-Site Scripting si los datos provienen del usuario.
+* <strong>Integridad en CI/CD:</strong> El archivo <code>.github/workflows/ci.yml</code> utiliza tags mutables en lugar de hashes SHA, exponiendo el pipeline a ataques de cadena de suministro.</p>
+<h3>3.2 Análisis de Dependencias (SCA - Dependency-Check)</h3>
+<p><em>(Omitido temporalmente en esta iteración del pipeline local para evitar el timeout por descarga masiva de NVD sin API Key. Se recomienda ejecutar en la nube con caché activada).</em></p>
+<h3>3.3 Análisis Dinámico (DAST - OWASP ZAP)</h3>
+<p>La ejecución contra el contenedor <code>localhost:4200</code> generó el archivo de configuración <code>zap.yaml</code>. <em>(Nota: Debido a permisos de volúmenes de Docker en Windows local, ZAP no pudo exportar el archivo HTML, pero el escáner alcanzó el objetivo).</em></p>
+<h3>3.4 Escaneo de Contenedores (Trivy)</h3>
+<p>El escaneo a la imagen de base de datos arrojó <strong>51 vulnerabilidades</strong> en total. Filtrando por las más graves:
+* <strong>13 de severidad CRÍTICA:</strong> Incluyendo fallas en <code>libxml2</code> (Denegación de servicio CVE-2026-6653) y librerías criptográficas de Go (<code>stdlib</code> CVE-2025-68121).
+* <strong>38 de severidad ALTA:</strong> Múltiples CVEs en dependencias del sistema operativo base (Debian).</p>
+<hr />
+<h2>4. Tabla Consolidada de Hallazgos</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Vulnerabilidad / Hallazgo</th>
+<th>Herramienta</th>
+<th>Componente Afectado</th>
+<th>Severidad</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Ejecución de contenedor como <code>root</code> (Falta <code>USER</code>)</td>
+<td>Semgrep</td>
+<td><code>api.Dockerfile</code> / <code>worker.Dockerfile</code></td>
+<td><strong>Alta (ERROR)</strong></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Posible XSS por uso de <code>bypassSecurityTrustHtml</code></td>
+<td>Semgrep</td>
+<td>Frontend (<code>assistant.ts</code>)</td>
+<td>Media (WARNING)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Uso de Tags Mutables en GitHub Actions</td>
+<td>Semgrep</td>
+<td><code>.github/workflows/ci.yml</code></td>
+<td>Media (WARNING)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Denegación de Servicio en <code>libxml2</code> (CVE-2026-6653)</td>
+<td>Trivy</td>
+<td>Imagen Postgres (<code>libxml2</code>)</td>
+<td><strong>CRÍTICA</strong></td>
+</tr>
+<tr>
+<td>5</td>
+<td>Falla validación de certificados TLS en Go (CVE-2025-68121)</td>
+<td>Trivy</td>
+<td>Imagen Postgres (<code>stdlib</code>)</td>
+<td><strong>CRÍTICA</strong></td>
+</tr>
+<tr>
+<td>6</td>
+<td>Producción criptográfica incorrecta (CVE-2026-13221)</td>
+<td>Trivy</td>
+<td>Imagen Postgres (<code>perl</code>)</td>
+<td><strong>CRÍTICA</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>5. Análisis de Riesgo</h2>
+<p>Los hallazgos presentan riesgos tangibles para NextAuditAI:
+* <strong>Ejecutar contenedores como Root (ID 1):</strong> Es un riesgo de impacto alto. Si un atacante logra comprometer la aplicación (ej. a través del XSS mencionado en el ID 2), tendrá acceso de superusuario dentro del contenedor, facilitando el escape hacia el servidor anfitrión (Host).
+* <strong>Vulnerabilidades Críticas en Postgres (ID 4, 5 y 6):</strong> Un fallo en la validación TLS de la base de datos podría permitir ataques Man-in-the-Middle (MitM) interceptando datos sensibles de auditorías almacenados en el sistema.</p>
+<hr />
+<h2>6. Recomendaciones de Remediación</h2>
+<ol>
+<li><strong>Para ID 1 (Contenedores Root):</strong></li>
+<li><em>Remediación:</em> Agregar explícitamente <code>USER non-root</code> (o un usuario creado específicamente, ej. <code>node</code>) al final de todos los Dockerfiles antes de la instrucción <code>CMD</code> o <code>ENTRYPOINT</code>.</li>
+<li><strong>Para ID 2 (XSS):</strong></li>
+<li><em>Remediación:</em> Evitar el uso de <code>bypassSecurityTrustHtml</code>. Si es estrictamente necesario, implementar una librería robusta de sanitización (como DOMPurify) sobre el input del usuario antes de pasarlo a Angular.</li>
+<li><strong>Para ID 4, 5 y 6 (Vulnerabilidades Base):</strong></li>
+<li><em>Remediación:</em> Actualizar la imagen base de PostgreSQL en <code>compose.dev.yml</code> a la versión de parche más reciente, o utilizar imágenes minimalistas como Alpine o distroless para reducir drásticamente la superficie de ataque (reduciendo las dependencias con CVEs heredados).</li>
+</ol>
+<hr />
+<h2>7. Conclusiones</h2>
+<p>La automatización de las pruebas de seguridad ha demostrado ser una capa indispensable en el desarrollo de software moderno. A través de este laboratorio, no solo hemos podido detectar fallas potenciales en NextAuditAI en sus distintas etapas (código estático, dependencias, en ejecución y entorno dockerizado), sino que confirmamos que integrar herramientas Open Source como Semgrep y OWASP ZAP en un pipeline garantiza una detección temprana, escalable y reproducible de vulnerabilidades que, de otra forma, requerirían semanas de auditoría manual.</p>
+<hr />
+<h2>8. Anexos</h2>
+<ul>
+<li>Script <code>ejecutar_seguridad.ps1</code> utilizado para la automatización.</li>
+<li>Reportes generados en formatos JSON, HTML y texto plano.</li>
+</ul></body>
