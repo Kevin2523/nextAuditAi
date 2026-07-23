@@ -21,7 +21,7 @@ export class FileIntegrityService implements OnModuleInit, OnModuleDestroy {
   private readonly projectRoot: string;
 
   constructor(private readonly securityLogger: SecurityLoggerService) {
-    this.projectRoot = join(__dirname, '..', '..', '..', '..', '..', '..');
+    this.projectRoot = process.cwd();
     this.monitoredFiles = [
       '.env',
       'prisma/schema.prisma',
