@@ -12,20 +12,24 @@ export class N8nActivityService {
   constructor(private readonly config: ConfigService) {}
 
   async getExecutions(limitValue?: string): Promise<unknown> {
-    const baseUrl = this.getN8nBaseUrl();
-    const limit = this.normalizeLimit(limitValue);
-    const headers = await this.buildHeaders(baseUrl);
+    try {
+      const baseUrl = this.getN8nBaseUrl();
+      const limit = this.normalizeLimit(limitValue);
+      const headers = await this.buildHeaders(baseUrl);
 
-    const response = await fetch(`${baseUrl}/rest/executions?limit=${limit}`, {
-      headers,
-    });
+      const response = await fetch(`${baseUrl}/rest/executions?limit=${limit}`, {
+        headers,
+      });
 
-    if (response.status === 401 && this.cachedCookie) {
-      this.cachedCookie = null;
-      return this.getExecutions(limitValue);
+      if (response.status === 401 && this.cachedCookie) {
+        this.cachedCookie = null;
+        return this.getExecutions(limitValue);
+      }
+
+      return this.parseN8nResponse(response);
+    } catch (error) {
+      return { data: { result: [] }, message: 'N8n integration disabled or unavailable' };
     }
-
-    return this.parseN8nResponse(response);
   }
 
   private async buildHeaders(baseUrl: string): Promise<Record<string, string>> {

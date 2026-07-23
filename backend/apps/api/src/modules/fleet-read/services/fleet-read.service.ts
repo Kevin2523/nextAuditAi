@@ -29,17 +29,21 @@ export class FleetReadService {
   }
 
   private async requestFleet(path: string): Promise<unknown> {
-    const baseUrl = this.getFleetBaseUrl();
-    const token = await this.getFleetToken(baseUrl);
+    try {
+      const baseUrl = this.getFleetBaseUrl();
+      const token = await this.getFleetToken(baseUrl);
 
-    const response = await fetch(`${baseUrl}${path}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/json',
-      },
-    });
+      const response = await fetch(`${baseUrl}${path}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      });
 
-    return this.parseFleetResponse(response);
+      return this.parseFleetResponse(response);
+    } catch (error) {
+      return { hosts: [], vulnerabilities: [], message: 'Fleet integration disabled or unavailable' };
+    }
   }
 
   private getFleetBaseUrl(): string {
