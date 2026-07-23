@@ -175,8 +175,9 @@ export class SettingsPanel {
         this.mfaLoading.set(false);
         this.mfaMessage.set('Escanea el código QR con tu app de autenticación.');
       },
-      error: () => {
-        this.mfaError.set('No se pudo generar el secreto MFA.');
+      error: (err) => {
+        console.error('Error generando MFA:', err);
+        this.mfaError.set(err.error?.message || 'No se pudo generar el secreto MFA.');
         this.mfaLoading.set(false);
       },
     });
@@ -198,8 +199,9 @@ export class SettingsPanel {
         this.mfaMessage.set('MFA activado correctamente.');
         this.mfaLoading.set(false);
       },
-      error: () => {
-        this.mfaError.set('No se pudo activar MFA.');
+      error: (err) => {
+        console.error('Error activando MFA:', err);
+        this.mfaError.set(err.error?.message || 'No se pudo activar MFA.');
         this.mfaLoading.set(false);
       },
     });
@@ -215,8 +217,9 @@ export class SettingsPanel {
         this.mfaMessage.set('MFA ha sido desactivado exitosamente.');
         this.mfaLoading.set(false);
       },
-      error: () => {
-        this.mfaError.set('No se pudo desactivar MFA.');
+      error: (err) => {
+        console.error('Error desactivando MFA:', err);
+        this.mfaError.set(err.error?.message || 'No se pudo desactivar MFA.');
         this.mfaLoading.set(false);
       },
     });
@@ -225,7 +228,10 @@ export class SettingsPanel {
   loadPasskeys(): void {
     this.auth.listPasskeys().subscribe({
       next: (keys) => this.passkeys.set(keys),
-      error: () => this.passkeys.set([]),
+      error: (err) => {
+        console.error('Error cargando passkeys:', err);
+        this.passkeys.set([]);
+      },
     });
   }
 
@@ -249,8 +255,9 @@ export class SettingsPanel {
               this.passkeyLoading.set(false);
               this.loadPasskeys();
             },
-            error: () => {
-              this.passkeyError.set('Error al completar el registro de passkey.');
+            error: (err) => {
+              console.error('Error completando passkey:', err);
+              this.passkeyError.set(err.error?.message || 'Error al completar el registro de passkey.');
               this.passkeyLoading.set(false);
             },
           });
@@ -260,8 +267,9 @@ export class SettingsPanel {
           this.passkeyLoading.set(false);
         }
       },
-      error: () => {
-        this.passkeyError.set('Error al iniciar el registro de passkey.');
+      error: (err) => {
+        console.error('Error iniciando passkey:', err);
+        this.passkeyError.set(err.error?.message || 'Error al iniciar el registro de passkey.');
         this.passkeyLoading.set(false);
       },
     });
@@ -273,8 +281,9 @@ export class SettingsPanel {
         this.passkeyMessage.set('Passkey eliminada.');
         this.loadPasskeys();
       },
-      error: () => {
-        this.passkeyError.set('Error al eliminar la passkey.');
+      error: (err) => {
+        console.error('Error eliminando passkey:', err);
+        this.passkeyError.set(err.error?.message || 'Error al eliminar la passkey.');
       },
     });
   }

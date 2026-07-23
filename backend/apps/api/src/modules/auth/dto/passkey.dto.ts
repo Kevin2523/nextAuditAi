@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsObject, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class PasskeyRegisterBeginDto {
   @IsString()
@@ -20,6 +20,7 @@ export class PasskeyRegisterCompleteDto {
   @IsString()
   rawId!: string;
 
+  @IsObject()
   response!: {
     clientDataJSON: string;
     attestationObject: string;
@@ -32,6 +33,7 @@ export class PasskeyRegisterCompleteDto {
   @IsOptional()
   type?: string;
 
+  @IsObject()
   @IsOptional()
   clientExtensionResults?: Record<string, unknown>;
 
@@ -59,6 +61,7 @@ export class PasskeyLoginCompleteDto {
   @IsString()
   rawId!: string;
 
+  @IsObject()
   response!: {
     clientDataJSON: string;
     authenticatorData: string;

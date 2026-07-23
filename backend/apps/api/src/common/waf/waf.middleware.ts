@@ -5,7 +5,7 @@ import { SecurityEvent, SecurityLoggerService } from '../logger/security-logger.
 
 @Injectable()
 export class WafMiddleware implements NestMiddleware {
-  private readonly excludedPaths = ['/api/docs', '/n8n-webhook', '/api/v1/security/waf/test'];
+  private readonly excludedPaths = ['/api/docs', '/n8n-webhook', '/api/v1/security/waf/test', '/api/v1/auth'];
 
   constructor(
     private readonly wafService: WafService,
