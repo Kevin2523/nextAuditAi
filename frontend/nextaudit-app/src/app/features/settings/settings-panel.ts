@@ -1,40 +1,61 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { AuthService, MfaSetupResponse, PasskeyInfo } from '../../services/auth.service';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import { AuthService, MfaSetupResponse, PasskeyInfo, PASSWORD_POLICY_REGEX } from '../../services/auth.service';
 import { WebAuthnService } from '../../services/webauthn.service';
+import { SecurityDemo } from './security-demo';
 
-type Tab = 'cuenta' | 'seguridad';
+type Tab = 'cuenta' | 'seguridad' | 'demostracion';
+
+function passwordsMatchValidator(control: AbstractControl): ValidationErrors | null {
+  const newPw = control.get('newPassword');
+  const confirm = control.get('confirmPassword');
+  if (!newPw || !confirm || !newPw.value || !confirm.value) return null;
+  return newPw.value !== confirm.value ? { mismatch: true } : null;
+}
 
 @Component({
   selector: 'app-settings-panel',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ReactiveFormsModule, SecurityDemo],
   templateUrl: './settings-panel.html',
 })
 export class SettingsPanel {
   protected readonly auth = inject(AuthService);
   protected readonly webauthn = inject(WebAuthnService);
   protected readonly router = inject(Router);
+  private readonly fb = inject(FormBuilder);
 
   readonly activeTab = signal<Tab>('cuenta');
 
-  readonly profileDisplayName = signal('');
-  readonly profileEmail = signal('');
-  readonly profileCurrentPassword = signal('');
+  readonly profileForm = this.fb.nonNullable.group({
+    displayName: [''],
+    email: ['', Validators.email],
+    currentPassword: ['', Validators.required],
+  });
+
   readonly profileSaving = signal(false);
   readonly profileError = signal<string | null>(null);
   readonly profileMessage = signal<string | null>(null);
 
-  readonly passwordCurrentPassword = signal('');
-  readonly passwordNewPassword = signal('');
-  readonly passwordConfirm = signal('');
+  readonly passwordForm = this.fb.nonNullable.group({
+    currentPassword: ['', Validators.required],
+    newPassword: ['', [Validators.required, Validators.pattern(PASSWORD_POLICY_REGEX)]],
+    confirmPassword: ['', Validators.required],
+  }, { validators: passwordsMatchValidator });
+
   readonly passwordSaving = signal(false);
   readonly passwordError = signal<string | null>(null);
   readonly passwordMessage = signal<string | null>(null);
 
+  readonly passwordRules = signal({ length: false, uppercase: false, lowercase: false, number: false, special: false });
+
+  readonly mfaForm = this.fb.nonNullable.group({
+    otp: ['', [Validators.required, Validators.pattern(/^\d{6}$/)]],
+  });
+
   readonly mfaSetup = signal<MfaSetupResponse | null>(null);
-  readonly mfaOtp = signal('');
   readonly mfaLoading = signal(false);
   readonly mfaError = signal<string | null>(null);
   readonly mfaMessage = signal<string | null>(null);
@@ -46,8 +67,21 @@ export class SettingsPanel {
 
   constructor() {
     this.loadPasskeys();
-    this.profileDisplayName.set(this.auth.currentUserSignal()?.displayName ?? '');
-    this.profileEmail.set(this.auth.currentUserSignal()?.email ?? '');
+    const user = this.auth.currentUserSignal();
+    this.profileForm.patchValue({
+      displayName: user?.displayName ?? '',
+      email: user?.email ?? '',
+    });
+
+    this.passwordForm.get('newPassword')?.valueChanges.subscribe(pw => {
+      this.passwordRules.set({
+        length: (pw ?? '').length >= 12,
+        uppercase: /[A-Z]/.test(pw ?? ''),
+        lowercase: /[a-z]/.test(pw ?? ''),
+        number: /[0-9]/.test(pw ?? ''),
+        special: /[^A-Za-z0-9]/.test(pw ?? ''),
+      });
+    });
   }
 
   setTab(tab: Tab): void {
@@ -58,16 +92,17 @@ export class SettingsPanel {
   }
 
   saveProfile(): void {
-    const displayName = this.profileDisplayName().trim();
-    const email = this.profileEmail().trim();
-    const currentPassword = this.profileCurrentPassword();
+    if (this.profileForm.invalid) {
+      this.profileForm.markAllAsTouched();
+      return;
+    }
+
+    const displayName = (this.profileForm.value.displayName ?? '').trim();
+    const email = (this.profileForm.value.email ?? '').trim();
+    const currentPassword = this.profileForm.value.currentPassword ?? '';
 
     if (!displayName && !email) {
       this.profileError.set('Debes proporcionar al menos un nombre o correo.');
-      return;
-    }
-    if (!currentPassword) {
-      this.profileError.set('Debes ingresar tu contraseña actual para guardar cambios.');
       return;
     }
 
@@ -78,15 +113,13 @@ export class SettingsPanel {
     this.auth.updateProfile({ displayName, email, currentPassword }).subscribe({
       next: (response) => {
         this.profileSaving.set(false);
-        this.profileCurrentPassword.set('');
+        this.profileForm.patchValue({ currentPassword: '' });
         if (response.reauthenticate) {
           this.profileMessage.set('Correo actualizado. Debes volver a iniciar sesión para que los cambios surtan efecto.');
-          this.profileError.set(null);
           this.auth.logout();
           this.router.navigate(['/login']);
         } else {
           this.profileMessage.set('Perfil actualizado correctamente.');
-          this.profileError.set(null);
         }
       },
       error: (err) => {
@@ -98,22 +131,18 @@ export class SettingsPanel {
   }
 
   savePassword(): void {
-    const currentPassword = this.passwordCurrentPassword();
-    const newPassword = this.passwordNewPassword();
-    const confirm = this.passwordConfirm();
-
-    if (!currentPassword || !newPassword || !confirm) {
-      this.passwordError.set('Completa todos los campos.');
+    if (this.passwordForm.invalid) {
+      this.passwordForm.markAllAsTouched();
       return;
     }
-    if (newPassword !== confirm) {
+
+    if (this.passwordForm.hasError('mismatch')) {
       this.passwordError.set('Las contraseñas nuevas no coinciden.');
       return;
     }
-    if (newPassword.length < 12) {
-      this.passwordError.set('La contraseña debe tener al menos 12 caracteres.');
-      return;
-    }
+
+    const currentPassword = this.passwordForm.value.currentPassword ?? '';
+    const newPassword = this.passwordForm.value.newPassword ?? '';
 
     this.passwordSaving.set(true);
     this.passwordError.set(null);
@@ -122,9 +151,7 @@ export class SettingsPanel {
     this.auth.changePassword({ currentPassword, newPassword }).subscribe({
       next: () => {
         this.passwordSaving.set(false);
-        this.passwordCurrentPassword.set('');
-        this.passwordNewPassword.set('');
-        this.passwordConfirm.set('');
+        this.passwordForm.reset();
         this.passwordMessage.set('Contraseña actualizada. Debes volver a iniciar sesión.');
         this.auth.logout();
         this.router.navigate(['/login']);
@@ -148,19 +175,21 @@ export class SettingsPanel {
         this.mfaLoading.set(false);
         this.mfaMessage.set('Escanea el código QR con tu app de autenticación.');
       },
-      error: () => {
-        this.mfaError.set('No se pudo generar el secreto MFA.');
+      error: (err) => {
+        console.error('Error generando MFA:', err);
+        this.mfaError.set(err.error?.message || 'No se pudo generar el secreto MFA.');
         this.mfaLoading.set(false);
       },
     });
   }
 
   enableMfa(): void {
-    const otp = this.mfaOtp().trim();
-    if (!/^\d{6}$/.test(otp)) {
-      this.mfaError.set('El código OTP debe tener 6 dígitos.');
+    if (this.mfaForm.invalid) {
+      this.mfaForm.markAllAsTouched();
       return;
     }
+
+    const otp = this.mfaForm.value.otp ?? '';
 
     this.mfaLoading.set(true);
     this.mfaError.set(null);
@@ -170,8 +199,9 @@ export class SettingsPanel {
         this.mfaMessage.set('MFA activado correctamente.');
         this.mfaLoading.set(false);
       },
-      error: () => {
-        this.mfaError.set('No se pudo activar MFA.');
+      error: (err) => {
+        console.error('Error activando MFA:', err);
+        this.mfaError.set(err.error?.message || 'No se pudo activar MFA.');
         this.mfaLoading.set(false);
       },
     });
@@ -187,8 +217,9 @@ export class SettingsPanel {
         this.mfaMessage.set('MFA ha sido desactivado exitosamente.');
         this.mfaLoading.set(false);
       },
-      error: () => {
-        this.mfaError.set('No se pudo desactivar MFA.');
+      error: (err) => {
+        console.error('Error desactivando MFA:', err);
+        this.mfaError.set(err.error?.message || 'No se pudo desactivar MFA.');
         this.mfaLoading.set(false);
       },
     });
@@ -197,7 +228,10 @@ export class SettingsPanel {
   loadPasskeys(): void {
     this.auth.listPasskeys().subscribe({
       next: (keys) => this.passkeys.set(keys),
-      error: () => this.passkeys.set([]),
+      error: (err) => {
+        console.error('Error cargando passkeys:', err);
+        this.passkeys.set([]);
+      },
     });
   }
 
@@ -221,8 +255,9 @@ export class SettingsPanel {
               this.passkeyLoading.set(false);
               this.loadPasskeys();
             },
-            error: () => {
-              this.passkeyError.set('Error al completar el registro de passkey.');
+            error: (err) => {
+              console.error('Error completando passkey:', err);
+              this.passkeyError.set(err.error?.message || 'Error al completar el registro de passkey.');
               this.passkeyLoading.set(false);
             },
           });
@@ -232,8 +267,9 @@ export class SettingsPanel {
           this.passkeyLoading.set(false);
         }
       },
-      error: () => {
-        this.passkeyError.set('Error al iniciar el registro de passkey.');
+      error: (err) => {
+        console.error('Error iniciando passkey:', err);
+        this.passkeyError.set(err.error?.message || 'Error al iniciar el registro de passkey.');
         this.passkeyLoading.set(false);
       },
     });
@@ -245,8 +281,9 @@ export class SettingsPanel {
         this.passkeyMessage.set('Passkey eliminada.');
         this.loadPasskeys();
       },
-      error: () => {
-        this.passkeyError.set('Error al eliminar la passkey.');
+      error: (err) => {
+        console.error('Error eliminando passkey:', err);
+        this.passkeyError.set(err.error?.message || 'Error al eliminar la passkey.');
       },
     });
   }

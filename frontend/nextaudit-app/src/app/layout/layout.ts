@@ -4,6 +4,7 @@ import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } fro
 import { filter } from 'rxjs/operators';
 import { AuditNotification, AuditNotificationService } from '../services/audit-notification.service';
 import { ChatDrawerService } from '../services/chat-drawer.service';
+import { WafNotificationService } from '../services/waf-notification.service';
 import { Assistant } from '../features/assistant/assistant';
 import { SettingsPanel } from '../features/settings/settings-panel';
 import { AuthService, UserRole } from '../services/auth.service';
@@ -27,6 +28,7 @@ export class Layout {
   protected readonly auditNotifications = inject(AuditNotificationService);
   protected readonly chatDrawer = inject(ChatDrawerService);
   protected readonly auth = inject(AuthService);
+  protected readonly wafNotifications = inject(WafNotificationService);
   collapsed = false;
   currentTitle = 'Dashboard';
   readonly globalQuery = signal('');
@@ -40,6 +42,7 @@ export class Layout {
     { label: 'Inventario de Dispositivos', route: '/inventory',     icon: 'laptop',           section: 'MENU PRINCIPAL' },
     { label: 'Registro de Actividad', route: '/history',       icon: 'activity',         section: 'MENU PRINCIPAL' },
     { label: 'Asistente Virtual',     route: '/assistant',     icon: 'bot',              section: 'MENU PRINCIPAL', roles: ['admin', 'super_admin'] },
+    { label: 'Seguridad',             route: '/security',      icon: 'shield',           section: 'MENU PRINCIPAL', roles: ['super_admin'] },
     { label: 'Usuarios',              route: '/admin/users',   icon: 'users',            section: 'ADMINISTRACION', roles: ['super_admin'] },
     { label: 'Centro de Ayuda',       route: '/help-center',   icon: 'book',             section: 'CONFIGURACION Y AYUDA' },
   ];
@@ -51,6 +54,10 @@ export class Layout {
         const item = this.navItems.find(n => e.urlAfterRedirects.startsWith(n.route));
         if (item) this.currentTitle = item.label;
       });
+
+    if (this.auth.hasAnyRole(['super_admin'])) {
+      this.wafNotifications.start();
+    }
   }
 
   getItemsBySection(section: string): NavItem[] {

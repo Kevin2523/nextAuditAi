@@ -1,4 +1,4 @@
-import { BadGatewayException, Injectable, ServiceUnavailableException } from '@nestjs/common';
+import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { AiChatDto, AiRemediationDto, AiReportDto } from '../dto/ai-chat.dto';
 
@@ -85,11 +85,10 @@ export class AiChatService {
     const data = text ? this.parseJson(text) : null;
 
     if (!response.ok) {
-      throw new BadGatewayException({
-        message: 'Flowise respondio con error.',
-        statusCode: response.status,
-        detail: data,
-      });
+      return {
+        text: 'El asistente AI no esta disponible en este momento. Verifica que Flowise este configurado correctamente.',
+        sessionId: null,
+      };
     }
 
     return data;

@@ -1,5 +1,4 @@
-# CI skeleton — add lint/test/deploy steps as needed
-name: CI
+name: DevSecOps Pipeline
 
 on:
   push:
@@ -7,10 +6,117 @@ on:
   pull_request:
     branches: [main, develop, testing]
 
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
 jobs:
-  placeholder:
+  codeql-analysis:
+    name: SAST — CodeQL
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Placeholder
-        run: echo "CI pipeline — add jobs here"
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript, typescript
+          queries: security-and-quality
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+  secret-scanning:
+    name: Secret Scanning — TruffleHog
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: TruffleHog Scan
+        uses: trufflesecurity/trufflehog@v3
+        with:
+          extra_args: --only-verified
+
+  dependency-scan:
+    name: Dependency Scan — npm audit
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies (backend)
+        working-directory: backend
+        run: npm ci
+      - name: Run audit
+        working-directory: backend
+        run: npm audit --audit-level=high
+
+  dast-staging:
+    name: DAST — OWASP ZAP
+    needs: [codeql-analysis, secret-scanning, dependency-scan]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - name: OWASP ZAP Full Scan
+        uses: zaproxy/action-full-scan@v0.12.0
+        with:
+          target: ${{ vars.STAGING_URL || 'http://localhost:3001' }}
+          cmd_options: -a -j -t 30
+
+  build-and-lint:
+    name: Build & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+      - name: Install dependencies (backend)
+        working-directory: backend
+        run: npm ci
+      - name: Lint backend
+        working-directory: backend
+        run: npm run lint
+      - name: Build backend
+        working-directory: backend
+        run: npm run build
+      - name: Install dependencies (frontend)
+        working-directory: frontend/nextaudit-app
+        run: npm ci
+      - name: Build frontend
+        working-directory: frontend/nextaudit-app
+        run: npm run build
+
+  security-gate:
+    name: Security Gate
+    needs: [codeql-analysis, secret-scanning, dependency-scan, build-and-lint]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Evaluate gates
+        run: |
+          SAST="${{ needs.codeql-analysis.result }}"
+          SECRETS="${{ needs.secret-scanning.result }}"
+          DEPS="${{ needs.dependency-scan.result }}"
+          BUILD="${{ needs.build-and-lint.result }}"
+
+          echo "SAST (CodeQL): $SAST"
+          echo "Secrets (TruffleHog): $SECRETS"
+          echo "Dependencies (npm audit): $DEPS"
+          echo "Build & Lint: $BUILD"
+
+          if [[ "$SAST" != "success" ]]; then echo "SAST failed"; exit 1; fi
+          if [[ "$SECRETS" != "success" ]]; then echo "Secrets scan failed"; exit 1; fi
+          if [[ "$DEPS" != "success" ]]; then echo "Dependency scan failed"; exit 1; fi
+          if [[ "$BUILD" != "success" ]]; then echo "Build failed"; exit 1; fi
+
+          echo "All security gates passed!"

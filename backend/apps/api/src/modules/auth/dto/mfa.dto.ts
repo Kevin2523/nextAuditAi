@@ -1,4 +1,4 @@
-import { IsString, Matches } from 'class-validator';
+import { IsObject, IsOptional, IsString, Matches } from 'class-validator';
 
 export class MfaEnableDto {
   @IsString()
@@ -33,6 +33,7 @@ export class PasskeyMfaCompleteDto {
   @IsString()
   rawId!: string;
 
+  @IsObject()
   response!: {
     clientDataJSON: string;
     authenticatorData: string;

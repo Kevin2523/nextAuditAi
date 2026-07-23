@@ -1,6 +1,6 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map, tap } from 'rxjs';
+import { Observable, catchError, finalize, map, share, switchMap, tap, throwError } from 'rxjs';
 import type {
   PublicKeyCredentialCreationOptionsJSON,
   PublicKeyCredentialRequestOptionsJSON,
@@ -117,6 +117,7 @@ export class AuthService {
   private readonly refreshTokenSignal = signal<string | null>(null);
   private readonly pendingMfaTokenSignal = signal<string | null>(null);
   private readonly mfaEnabledSignal = signal(false);
+  private refreshInProgress: Observable<LoginSuccessResponse> | null = null;
 
   readonly claimsSignal = computed<JwtClaims | null>(() => {
     const token = this.accessTokenSignal();
@@ -152,6 +153,18 @@ export class AuthService {
 
   constructor(private readonly http: HttpClient) {
     this.restoreSession();
+    this.startExpiryCheck();
+  }
+
+  private startExpiryCheck(): void {
+    setInterval(() => {
+      const token = this.accessTokenSignal();
+      if (!token) return;
+      const claims = this.decodeJwt(token);
+      if (!claims || this.isExpired(claims)) {
+        this.clearSession();
+      }
+    }, 30_000);
   }
 
   login(credentials: LoginRequest): Observable<LoginOutcome> {
@@ -295,6 +308,37 @@ export class AuthService {
 
   accessToken(): string | null {
     return this.accessTokenSignal();
+  }
+
+  getRefreshToken(): string | null {
+    return this.refreshTokenSignal();
+  }
+
+  refreshToken(): Observable<LoginSuccessResponse> {
+    if (this.refreshInProgress) {
+      return this.refreshInProgress;
+    }
+
+    const refreshTokenValue = this.refreshTokenSignal();
+    if (!refreshTokenValue) {
+      return throwError(() => new Error('No hay refresh token disponible.'));
+    }
+
+    this.refreshInProgress = this.http.post<LoginSuccessResponse>('/api/v1/auth/refresh', { refreshToken: refreshTokenValue }).pipe(
+      tap((response) => {
+        this.storeSession(response.accessToken, response.refreshToken, response.user.id, Boolean(response.user.isMfaEnabled));
+      }),
+      catchError((err) => {
+        this.clearSession();
+        return throwError(() => err);
+      }),
+      finalize(() => {
+        this.refreshInProgress = null;
+      }),
+      share(),
+    );
+
+    return this.refreshInProgress;
   }
 
   pendingMfaToken(): string | null {

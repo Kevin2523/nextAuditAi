@@ -1,4 +1,4 @@
-import { BadGatewayException, Injectable, ServiceUnavailableException } from '@nestjs/common';
+import { BadGatewayException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 type N8nLoginResponse = {
@@ -11,11 +11,28 @@ export class N8nActivityService {
 
   constructor(private readonly config: ConfigService) {}
 
+  private isConfigured(): { ok: false } | { ok: true; baseUrl: string; apiKey: string } {
+    const baseUrl = this.config.get<string>('N8N_BASE_URL')?.replace(/\/$/, '');
+    if (!baseUrl) return { ok: false };
+
+    const apiKey = this.config.get<string>('N8N_API_KEY')?.trim();
+    if (apiKey) return { ok: true, baseUrl, apiKey };
+
+    const email = this.config.get<string>('N8N_EMAIL')?.trim();
+    const password = this.config.get<string>('N8N_PASSWORD');
+    if (!email || !password) return { ok: false };
+
+    return { ok: true, baseUrl, apiKey: '' };
+  }
+
   async getExecutions(limitValue?: string): Promise<unknown> {
     try {
-      const baseUrl = this.getN8nBaseUrl();
+      const cfg = this.isConfigured();
+      if (!cfg.ok) return { executions: [], isConfigured: false };
+
+      const baseUrl = cfg.baseUrl;
       const limit = this.normalizeLimit(limitValue);
-      const headers = await this.buildHeaders(baseUrl);
+      const headers = await this.buildHeaders(baseUrl, cfg.apiKey);
 
       const response = await fetch(`${baseUrl}/rest/executions?limit=${limit}`, {
         headers,
@@ -32,12 +49,11 @@ export class N8nActivityService {
     }
   }
 
-  private async buildHeaders(baseUrl: string): Promise<Record<string, string>> {
+  private async buildHeaders(baseUrl: string, apiKey: string): Promise<Record<string, string>> {
     const headers: Record<string, string> = {
       Accept: 'application/json',
     };
 
-    const apiKey = this.config.get<string>('N8N_API_KEY')?.trim();
     if (apiKey) {
       headers['X-N8N-API-KEY'] = apiKey;
       return headers;
@@ -52,10 +68,6 @@ export class N8nActivityService {
 
     const email = this.config.get<string>('N8N_EMAIL')?.trim();
     const password = this.config.get<string>('N8N_PASSWORD');
-
-    if (!email || !password) {
-      throw new ServiceUnavailableException('Credenciales de n8n no configuradas en backend.');
-    }
 
     const response = await fetch(`${baseUrl}/rest/login`, {
       method: 'POST',
@@ -75,16 +87,6 @@ export class N8nActivityService {
 
     this.cachedCookie = cookie;
     return cookie;
-  }
-
-  private getN8nBaseUrl(): string {
-    const baseUrl = this.config.get<string>('N8N_BASE_URL')?.replace(/\/$/, '');
-
-    if (!baseUrl) {
-      throw new ServiceUnavailableException('N8N_BASE_URL no esta configurado.');
-    }
-
-    return baseUrl;
   }
 
   private normalizeLimit(value?: string): number {

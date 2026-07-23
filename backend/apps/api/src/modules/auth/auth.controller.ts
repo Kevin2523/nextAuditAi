@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import type { Request } from 'express';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ChangePasswordDto } from './dto/change-password.dto';
@@ -11,6 +12,7 @@ import {
   PasskeyLoginBeginDto,
   PasskeyLoginCompleteDto,
 } from './dto/passkey.dto';
+import { RefreshDto } from './dto/refresh.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { AuthService } from './services/auth.service';
@@ -24,8 +26,13 @@ export class AuthController {
   ) {}
 
   @Post('login')
-  login(@Body() body: LoginDto) {
-    return this.authService.login(body);
+  login(@Body() body: LoginDto, @Req() req: Request) {
+    return this.authService.login(body, req.ip ?? '0.0.0.0');
+  }
+
+  @Post('refresh')
+  refresh(@Body() body: RefreshDto) {
+    return this.authService.refresh(body);
   }
 
   @Post('forgot-password')

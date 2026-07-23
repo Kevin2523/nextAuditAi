@@ -4,10 +4,12 @@ import { generateSecret, generateURI, verify } from 'otplib';
 import * as QRCode from 'qrcode';
 import { PrismaService } from '../../../persistence/prisma/prisma.service';
 import { UserPasswordService } from '../../iam/services/user-password.service';
+import { SecurityLoggerService, SecurityEvent } from '../../../common/logger/security-logger.service';
 import type { ChangePasswordDto } from '../dto/change-password.dto';
 import type { ForgotPasswordDto } from '../dto/forgot-password.dto';
 import type { LoginDto } from '../dto/login.dto';
 import type { MfaEnableDto, MfaVerifyLoginDto } from '../dto/mfa.dto';
+import type { RefreshDto } from '../dto/refresh.dto';
 import type { ResetPasswordDto } from '../dto/reset-password.dto';
 import type { UpdateProfileDto } from '../dto/update-profile.dto';
 import { AuthTokenService } from './auth-token.service';
@@ -25,9 +27,10 @@ export class AuthService {
     private readonly passwordService: UserPasswordService,
     private readonly tokenService: AuthTokenService,
     private readonly passwordResetMail: PasswordResetMailService,
+    private readonly securityLogger: SecurityLoggerService,
   ) {}
 
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto, ip: string) {
     const email = dto.email.toLowerCase().trim();
     const user = await this.prisma.user.findUnique({
       where: { email },
@@ -43,19 +46,36 @@ export class AuthService {
     });
 
     if (!user?.isActive) {
+      this.securityLogger.recordSecurityEvent(SecurityEvent.LOGIN_FAILED, {
+        email: dto.email,
+        ip,
+        details: { reason: 'user_not_found_or_inactive' },
+      });
       throw new UnauthorizedException('Credenciales invalidas.');
     }
 
-    this.assertNotLocked(user.lockedUntil);
+    this.assertNotLocked(user, ip);
 
     const passwordMatches = await this.passwordService.verifyPassword(dto.password, user.passwordHash);
     if (!passwordMatches) {
       await this.recordFailedLogin(user.id, user.failedLoginAttempts, user.lockedUntil);
+      this.securityLogger.recordSecurityEvent(SecurityEvent.LOGIN_FAILED, {
+        userId: user.id,
+        email: user.email,
+        ip,
+        details: { reason: 'invalid_password' },
+      });
       throw new UnauthorizedException('Credenciales invalidas.');
     }
 
     const membership = user.memberships[0];
     if (!membership) {
+      this.securityLogger.recordSecurityEvent(SecurityEvent.LOGIN_FAILED, {
+        userId: user.id,
+        email: user.email,
+        ip,
+        details: { reason: 'no_membership' },
+      });
       throw new UnauthorizedException('Usuario sin membresia activa.');
     }
 
@@ -81,10 +101,39 @@ export class AuthService {
       };
     }
 
+    this.securityLogger.recordSecurityEvent(SecurityEvent.LOGIN_SUCCESS, {
+      userId: user.id,
+      email: user.email,
+      ip,
+    });
+
     return this.issueFinalTokens(user.id);
   }
 
-  async forgotPassword(dto: ForgotPasswordDto) {
+  async refresh(dto: RefreshDto) {
+    const tokenHash = this.tokenService.hashRefreshToken(dto.refreshToken);
+
+    const stored = await this.prisma.refreshToken.findFirst({
+      where: {
+        tokenHash,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+    });
+
+    if (!stored) {
+      throw new UnauthorizedException('Refresh token invalido o expirado.');
+    }
+
+    await this.prisma.refreshToken.update({
+      where: { id: stored.id },
+      data: { revokedAt: new Date() },
+    });
+
+    return this.issueFinalTokens(stored.userId);
+  }
+
+async forgotPassword(dto: ForgotPasswordDto) {
     const email = dto.email.toLowerCase().trim();
     const user = await this.prisma.user.findUnique({ where: { email } });
 
@@ -226,6 +275,12 @@ export class AuthService {
       throw new UnauthorizedException('Codigo MFA invalido.');
     }
 
+    this.securityLogger.recordSecurityEvent(SecurityEvent.LOGIN_SUCCESS, {
+      userId: user.id,
+      email: user.email,
+      details: { method: 'mfa_otp' },
+    });
+
     return this.issueFinalTokens(user.id);
   }
 
@@ -306,8 +361,14 @@ export class AuthService {
     };
   }
 
-  private assertNotLocked(lockedUntil: Date | null): void {
-    if (lockedUntil && lockedUntil.getTime() > Date.now()) {
+  private assertNotLocked(user: { id: string; email: string; lockedUntil: Date | null }, ip: string): void {
+    if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
+      this.securityLogger.recordSecurityEvent(SecurityEvent.LOGIN_LOCKED, {
+        userId: user.id,
+        email: user.email,
+        ip,
+        details: { reason: 'account_locked' },
+      });
       throw new HttpException('Cuenta temporalmente bloqueada.', HTTP_LOCKED);
     }
   }

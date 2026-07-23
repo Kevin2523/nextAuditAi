@@ -1,0 +1,61 @@
+rules:
+  - id: no-hardcoded-secrets
+    pattern-either:
+      - pattern: 'const $SECRET = "...secret..."'
+      - pattern: 'const $SECRET = "...password..."'
+      - pattern: 'const $SECRET = "...api_key..."'
+      - pattern: 'const $SECRET = "...token..."'
+    message: "Posible secreto hardcodeado detectado"
+    severity: WARNING
+    languages:
+      - typescript
+
+  - id: no-eval
+    pattern: eval(...)
+    message: "Uso de eval() detectado - posible riesgo de inyección"
+    severity: ERROR
+    languages:
+      - typescript
+
+  - id: no-child-process
+    pattern-either:
+      - pattern: 'child_process.exec(...)'
+      - pattern: 'child_process.execSync(...)'
+      - pattern: 'child_process.spawn(...)'
+      - pattern: 'child_process.spawnSync(...)'
+    message: "Ejecución de comandos del sistema detectada - posible RCE"
+    severity: WARNING
+    languages:
+      - typescript
+
+  - id: no-insecure-http
+    pattern: 'http://$DOMAIN/...'
+    message: "Uso de HTTP en lugar de HTTPS - tráfico no cifrado"
+    severity: WARNING
+    languages:
+      - typescript
+
+  - id: no-console-log
+    pattern: console.log(...)
+    message: "console.log detectado - puede exponer información sensible"
+    severity: WARNING
+    languages:
+      - typescript
+
+  - id: no-sql-concatenation
+    patterns:
+      - pattern: '$QUERY = "...$VAR..." + $INPUT'
+      - metavariable-regex:
+          metavariable: $QUERY
+          regex: .*(select|insert|update|delete).*
+    message: "Posible concatenación SQL - usar ORM con parametrización"
+    severity: ERROR
+    languages:
+      - typescript
+
+  - id: no-skip-tls-verify
+    pattern: 'NODE_TLS_REJECT_UNAUTHORIZED = "0"'
+    message: "Verificación TLS deshabilitada - riesgo de MITM"
+    severity: WARNING
+    languages:
+      - typescript
