@@ -1,4 +1,4 @@
-import { BadGatewayException, Injectable, ServiceUnavailableException } from '@nestjs/common';
+import { BadGatewayException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 type FleetLoginResponse = {
@@ -15,25 +15,47 @@ export class FleetReadService {
     }
   }
 
+  private isConfigured(): { ok: false } | { ok: true; baseUrl: string; token: string } {
+    const baseUrl = this.config.get<string>('FLEET_BASE_URL')?.replace(/\/$/, '');
+    if (!baseUrl) return { ok: false };
+
+    const configuredToken = this.config.get<string>('FLEET_API_TOKEN')?.trim();
+    if (configuredToken) return { ok: true, baseUrl, token: configuredToken };
+
+    const email = this.config.get<string>('FLEET_EMAIL');
+    const password = this.config.get<string>('FLEET_PASSWORD');
+    if (!email || !password) return { ok: false };
+
+    return { ok: true, baseUrl, token: '' };
+  }
+
   async getHosts(): Promise<unknown> {
-    return this.requestFleet('/api/v1/fleet/hosts');
+    const cfg = this.isConfigured();
+    if (!cfg.ok) return { hosts: [], isConfigured: false };
+    return this.requestFleet(cfg, '/api/v1/fleet/hosts');
   }
 
   async getVulnerabilities(): Promise<unknown> {
-    return this.requestFleet('/api/v1/fleet/vulnerabilities');
+    const cfg = this.isConfigured();
+    if (!cfg.ok) return { vulnerabilities: [], isConfigured: false };
+    return this.requestFleet(cfg, '/api/v1/fleet/vulnerabilities');
   }
 
   async sync(): Promise<{ status: string }> {
-    await this.getHosts();
+    const cfg = this.isConfigured();
+    if (!cfg.ok) return { status: 'no_configurado' };
+    await this.requestFleet(cfg, '/api/v1/fleet/hosts');
     return { status: 'sincronizacion_solicitada' };
   }
 
-  private async requestFleet(path: string): Promise<unknown> {
+  private async requestFleet(cfg: { baseUrl: string; token: string }, path: string): Promise<unknown> {
     try {
-      const baseUrl = this.getFleetBaseUrl();
-      const token = await this.getFleetToken(baseUrl);
+      let token = cfg.token;
+      if (!token) {
+        token = await this.getFleetToken(cfg.baseUrl);
+      }
 
-      const response = await fetch(`${baseUrl}${path}`, {
+      const response = await fetch(`${cfg.baseUrl}${path}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: 'application/json',
@@ -46,28 +68,11 @@ export class FleetReadService {
     }
   }
 
-  private getFleetBaseUrl(): string {
-    const baseUrl = this.config.get<string>('FLEET_BASE_URL')?.replace(/\/$/, '');
-
-    if (!baseUrl) {
-      throw new ServiceUnavailableException('FLEET_BASE_URL no esta configurado.');
-    }
-
-    return baseUrl;
-  }
-
   private async getFleetToken(baseUrl: string): Promise<string> {
-    const configuredToken = this.config.get<string>('FLEET_API_TOKEN')?.trim();
-    if (configuredToken) return configuredToken;
-
     if (this.cachedToken) return this.cachedToken;
 
     const email = this.config.get<string>('FLEET_EMAIL');
     const password = this.config.get<string>('FLEET_PASSWORD');
-
-    if (!email || !password) {
-      throw new ServiceUnavailableException('Credenciales de Fleet no configuradas en backend.');
-    }
 
     const response = await fetch(`${baseUrl}/api/v1/fleet/login`, {
       method: 'POST',

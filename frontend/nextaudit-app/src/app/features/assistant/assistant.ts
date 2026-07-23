@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
 import { FlowiseService } from '../../services/flowise.service';
+import { SanitizationService } from '../../services/sanitization.service';
 import { AssistantChatStateService, SaaSMessage } from '../../services/assistant-chat-state.service';
 
 interface SpeechChunk {
@@ -37,6 +38,7 @@ export class Assistant implements AfterViewInit {
   constructor(
     private flowise: FlowiseService,
     private sanitizer: DomSanitizer,
+    private sanitization: SanitizationService,
     private chatState: AssistantChatStateService,
     private cdr: ChangeDetectorRef
   ) {
@@ -57,7 +59,7 @@ export class Assistant implements AfterViewInit {
       id: 'w-1',
       sender: 'assistant',
       text: welcomeText,
-      html: this.sanitizer.bypassSecurityTrustHtml(`
+      html: this.sanitization.sanitizeHtml(`
          <p class="font-semibold text-[#0F172A] mb-1">Hola, soy tu Asistente de Seguridad.</p>
          <p class="text-[#475569]">Estoy preparado para analizar tu flota, detectar vulnerabilidades y aplicar reparación autónoma de forma segura. ¿En qué te puedo ayudar hoy?</p>
       `),
@@ -98,7 +100,7 @@ export class Assistant implements AfterViewInit {
       id: typingId,
       sender: 'assistant',
       text: 'Preparando respuesta',
-      html: this.sanitizer.bypassSecurityTrustHtml('<span class="text-[#64748B] font-medium">Preparando respuesta</span>'),
+      html: this.sanitization.sanitizeHtml('<span class="text-[#64748B] font-medium">Preparando respuesta</span>'),
       isTyping: true,
       time: this.getTime()
     });
@@ -113,7 +115,7 @@ export class Assistant implements AfterViewInit {
         id: 'a-'+Date.now(),
         sender: 'assistant',
         text: this.isVoiceEnabled && isAudioRequest ? 'Iniciando lectura' : res.text,
-        html: this.sanitizer.bypassSecurityTrustHtml(
+        html: this.sanitization.sanitizeHtml(
           this.isVoiceEnabled && isAudioRequest
             ? '<span class="text-[#64748B] font-medium">Iniciando lectura</span>'
             : this.flowise.formatMarkdown(res.text)
@@ -126,7 +128,7 @@ export class Assistant implements AfterViewInit {
       if (this.isVoiceEnabled && isAudioRequest) {
         this.speakResponse(res.text, (spokenText) => {
           assistantMessage.text = spokenText;
-          assistantMessage.html = this.sanitizer.bypassSecurityTrustHtml(this.flowise.formatMarkdown(spokenText));
+          assistantMessage.html = this.sanitization.sanitizeHtml(this.flowise.formatMarkdown(spokenText));
           this.cdr.detectChanges();
           this.scrollToBottom();
         });
@@ -135,7 +137,7 @@ export class Assistant implements AfterViewInit {
       this.removeMessage(typingId);
       this.messages.push({
         id: 'err', sender: 'assistant', text: '',
-        html: this.sanitizer.bypassSecurityTrustHtml('<span class="text-red-500 font-medium">Ocurrió un error al contactar al motor de análisis.</span>'),
+        html: this.sanitization.sanitizeHtml('<span class="text-red-500 font-medium">Ocurrió un error al contactar al motor de análisis.</span>'),
         time: this.getTime()
       });
     }

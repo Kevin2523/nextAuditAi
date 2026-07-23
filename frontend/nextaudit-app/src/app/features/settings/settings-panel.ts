@@ -3,13 +3,14 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService, MfaSetupResponse, PasskeyInfo } from '../../services/auth.service';
 import { WebAuthnService } from '../../services/webauthn.service';
+import { SecurityDemo } from './security-demo';
 
-type Tab = 'cuenta' | 'seguridad';
+type Tab = 'cuenta' | 'seguridad' | 'demostracion';
 
 @Component({
   selector: 'app-settings-panel',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, SecurityDemo],
   templateUrl: './settings-panel.html',
 })
 export class SettingsPanel {

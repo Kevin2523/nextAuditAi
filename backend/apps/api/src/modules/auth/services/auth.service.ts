@@ -8,6 +8,7 @@ import type { ChangePasswordDto } from '../dto/change-password.dto';
 import type { ForgotPasswordDto } from '../dto/forgot-password.dto';
 import type { LoginDto } from '../dto/login.dto';
 import type { MfaEnableDto, MfaVerifyLoginDto } from '../dto/mfa.dto';
+import type { RefreshDto } from '../dto/refresh.dto';
 import type { ResetPasswordDto } from '../dto/reset-password.dto';
 import type { UpdateProfileDto } from '../dto/update-profile.dto';
 import { AuthTokenService } from './auth-token.service';
@@ -84,12 +85,35 @@ export class AuthService {
     return this.issueFinalTokens(user.id);
   }
 
-  async forgotPassword(dto: ForgotPasswordDto) {
+  async refresh(dto: RefreshDto) {
+    const tokenHash = this.tokenService.hashRefreshToken(dto.refreshToken);
+
+    const stored = await this.prisma.refreshToken.findFirst({
+      where: {
+        tokenHash,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+    });
+
+    if (!stored) {
+      throw new UnauthorizedException('Refresh token invalido o expirado.');
+    }
+
+    await this.prisma.refreshToken.update({
+      where: { id: stored.id },
+      data: { revokedAt: new Date() },
+    });
+
+    return this.issueFinalTokens(stored.userId);
+  }
+
+async forgotPassword(dto: ForgotPasswordDto) {
     const email = dto.email.toLowerCase().trim();
     const user = await this.prisma.user.findUnique({ where: { email } });
 
     const response = {
-      message: 'Si el correo existe, se envio un enlace temporal para restablecer la contraseña.',
+      message: 'Si el correo existe, se envio un enlace temporal para restablecer la contraseÃƒÆ’Ã‚Â±a.',
     };
 
     if (!user?.isActive) {

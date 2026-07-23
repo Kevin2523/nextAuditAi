@@ -173,6 +173,26 @@ model Passkey {
   @@schema("iam")
 }
 
+model SecurityLog {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  event     String
+  severity  String   @default("info")
+  userId    String?  @map("user_id") @db.Uuid
+  email     String?
+  ip        String?
+  userAgent String?  @map("user_agent")
+  tenantId  String?  @map("tenant_id") @db.Uuid
+  metadata  Json?    @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([event, createdAt])
+  @@index([ip])
+  @@index([userId])
+  @@index([severity])
+  @@map("security_logs")
+  @@schema("telemetry")
+}
+
 model Alert {
   id         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenantId   String        @map("tenant_id") @db.Uuid

@@ -1,0 +1,96 @@
+.terminal-output {
+  background: #0F172A;
+  color: #E2E8F0;
+  font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 12px 16px;
+  max-height: 360px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+.terminal-output::-webkit-scrollbar {
+  width: 6px;
+}
+
+.terminal-output::-webkit-scrollbar-track {
+  background: #1E293B;
+}
+
+.terminal-output::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 3px;
+}
+
+.terminal-line {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.terminal-prompt {
+  color: #10B981;
+  font-weight: 700;
+  margin-right: 8px;
+  user-select: none;
+}
+
+.terminal-input-line {
+  color: #E2E8F0;
+}
+
+.terminal-output-line {
+  color: #CBD5E1;
+}
+
+.terminal-system-line {
+  color: #38BDF8;
+  font-weight: 600;
+}
+
+.terminal-error-line {
+  color: #F87171;
+}
+
+.terminal-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: #0F172A;
+  padding: 8px 16px;
+  border-top: 1px solid #1E293B;
+}
+
+.terminal-input-field {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #E2E8F0;
+  font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 12px;
+  caret-color: #10B981;
+}
+
+.terminal-input-field::placeholder {
+  color: #475569;
+}
+
+.terminal-quick-btn {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid #CBD5E1;
+  background: white;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+}
+
+.terminal-quick-btn:hover {
+  background: #1E293B;
+  color: white;
+  border-color: #1E293B;
+}

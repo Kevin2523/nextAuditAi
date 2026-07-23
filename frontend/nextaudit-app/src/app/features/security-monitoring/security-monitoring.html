@@ -1,0 +1,425 @@
+<div class="monitoring-container">
+  <!-- Tabs -->
+  <div class="flex border-b border-[#E2E8F0] mb-6">
+    <button (click)="setTab('waf')" class="tab-btn"
+      [class.tab-active]="activeTab() === 'waf'"
+      [class.tab-inactive]="activeTab() !== 'waf'">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      WAF
+    </button>
+    <button (click)="setTab('ids')" class="tab-btn"
+      [class.tab-active]="activeTab() === 'ids'"
+      [class.tab-inactive]="activeTab() !== 'ids'">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      IDS
+    </button>
+    <button (click)="setTab('siem')" class="tab-btn"
+      [class.tab-active]="activeTab() === 'siem'"
+      [class.tab-inactive]="activeTab() !== 'siem'">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      SIEM
+    </button>
+  </div>
+
+  <!-- ================================================================
+       WAF TAB
+  ================================================================ -->
+  @if (activeTab() === 'waf') {
+    <div class="space-y-6">
+      <!-- Stats Cards -->
+      @if (wafStats(); as stats) {
+        <div class="grid grid-cols-3 gap-4">
+          <div class="stat-card">
+            <p class="stat-value">{{ stats.rulesCount }}</p>
+            <p class="stat-label">Reglas activas</p>
+          </div>
+          <div class="stat-card">
+            <p class="stat-value text-red-600">{{ stats.totalBlocks }}</p>
+            <p class="stat-label">Bloqueos totales</p>
+          </div>
+          <div class="stat-card">
+            <p class="stat-value text-sm">{{ stats.lastBlocked ? (stats.lastBlocked | date:'HH:mm dd/MM') : '—' }}</p>
+            <p class="stat-label">Último bloqueo</p>
+          </div>
+        </div>
+      }
+
+      <!-- Rules Table -->
+      <div class="section-card">
+        <h3 class="section-title">Reglas del WAF</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left">
+            <thead>
+              <tr class="text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-b border-[#E2E8F0]">
+                <th class="py-3 px-3">Regla</th>
+                <th class="py-3 px-3">Ataque</th>
+                <th class="py-3 px-3">Severidad</th>
+                <th class="py-3 px-3">Ubicaciones</th>
+                <th class="py-3 px-3">Patrón</th>
+                <th class="py-3 px-3">Estado</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[#F1F5F9]">
+              @for (rule of wafRules(); track rule.name) {
+                <tr class="text-[13px] hover:bg-[#F8FAFC]">
+                  <td class="py-2.5 px-3 font-semibold text-[#0F172A]">{{ rule.name }}</td>
+                  <td class="py-2.5 px-3 text-[#475569]">{{ rule.attack }}</td>
+                  <td class="py-2.5 px-3">
+                    <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border {{ severityBadge(rule.severity) }}">
+                      {{ rule.severity }}
+                    </span>
+                  </td>
+                  <td class="py-2.5 px-3">
+                    <div class="flex flex-wrap gap-1">
+                      @for (loc of rule.locations; track loc) {
+                        <span class="text-[10px] font-medium text-[#475569] bg-[#F1F5F9] px-1.5 py-0.5 rounded">{{ loc }}</span>
+                      }
+                    </div>
+                  </td>
+                  <td class="py-2.5 px-3">
+                    <code class="text-[11px] font-mono text-[#64748B] break-all">{{ rule.pattern.length > 50 ? (rule.pattern.slice(0, 50) + '...') : rule.pattern }}</code>
+                  </td>
+                  <td class="py-2.5 px-3">
+                    <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      {{ rule.enabled ? 'Activa' : 'Inactiva' }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Test WAF -->
+      <div class="section-card">
+        <h3 class="section-title">Probar WAF</h3>
+        <p class="text-[12px] text-[#64748B] mb-4">Envía payloads de prueba para verificar que el WAF los bloquea.</p>
+        <div class="flex flex-wrap gap-2 mb-4">
+          @for (p of presetPayloads; track p.name) {
+            <button (click)="runTestPayload(p.value)" [disabled]="testLoading()"
+              class="px-3 py-1.5 rounded-lg border border-[#CBD5E1] text-[12px] font-semibold text-[#475569] hover:bg-[#F1F5F9] disabled:opacity-50 transition-colors">
+              {{ p.name }}
+            </button>
+          }
+        </div>
+        @if (testLoading()) {
+          <div class="text-[12px] text-[#64748B]">Probando...</div>
+        }
+        @if (testResult(); as result) {
+          <div class="rounded-xl border p-4 mt-2"
+            [class.border-emerald-200]="result.blocked"
+            [class.bg-emerald-50]="result.blocked"
+            [class.border-red-200]="!result.blocked"
+            [class.bg-red-50]="!result.blocked">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">{{ result.blocked ? '✅' : '❌' }}</span>
+              <div>
+                <p class="text-[13px] font-bold text-[#0F172A]">
+                  {{ result.blocked ? 'BLOQUEADO' : 'PERMITIDO' }}
+                </p>
+                @if (result.reason) {
+                  <p class="text-[12px] text-[#475569]">{{ result.reason }}</p>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ================================================================
+       IDS TAB
+  ================================================================ -->
+  @if (activeTab() === 'ids') {
+    <div class="space-y-6">
+      <!-- Stats Cards -->
+      @if (idsStats(); as stats) {
+        <div class="grid grid-cols-2 gap-4">
+          <div class="stat-card">
+            <p class="stat-value">{{ stats.trackedIps }}</p>
+            <p class="stat-label">IPs monitoreadas</p>
+          </div>
+          <div class="stat-card">
+            <p class="stat-value text-amber-600">{{ stats.blockedIps }}</p>
+            <p class="stat-label">IPs bloqueadas</p>
+          </div>
+        </div>
+      }
+
+      <!-- Signatures -->
+      @if (idsSignatures(); as data) {
+        <div class="section-card">
+          <h3 class="section-title">Firmas de Detección</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left">
+              <thead>
+                <tr class="text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-b border-[#E2E8F0]">
+                  <th class="py-3 px-3">Firma</th>
+                  <th class="py-3 px-3">Descripción</th>
+                  <th class="py-3 px-3">Severidad</th>
+                  <th class="py-3 px-3">Acción</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[#F1F5F9]">
+                @for (sig of data.signatures; track sig.name) {
+                  <tr class="text-[13px] hover:bg-[#F8FAFC]">
+                    <td class="py-2.5 px-3 font-semibold text-[#0F172A]">{{ sig.name }}</td>
+                    <td class="py-2.5 px-3 text-[#475569]">{{ sig.description }}</td>
+                    <td class="py-2.5 px-3">
+                      <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border {{ severityBadge(sig.severity) }}">
+                        {{ sig.severity }}
+                      </span>
+                    </td>
+                    <td class="py-2.5 px-3">
+                      <span class="inline-flex items-center gap-1 text-[11px] font-semibold"
+                        [class.text-red-600]="sig.action === 'block'"
+                        [class.text-blue-600]="sig.action === 'log'">
+                        <span class="w-1.5 h-1.5 rounded-full"
+                          [class.bg-red-500]="sig.action === 'block'"
+                          [class.bg-blue-500]="sig.action === 'log'"></span>
+                        {{ sig.action === 'block' ? 'Bloquear' : 'Registrar' }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Thresholds -->
+        <div class="section-card">
+          <h3 class="section-title">Umbrales de Detección</h3>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div class="threshold-item">
+              <span class="threshold-label">Max 404 por IP</span>
+              <span class="threshold-value">{{ data.thresholds.max404PerIp }}</span>
+              <span class="threshold-desc">en {{ formatMs(data.thresholds.windowMs) }}</span>
+            </div>
+            <div class="threshold-item">
+              <span class="threshold-label">Max logins fallidos</span>
+              <span class="threshold-value">{{ data.thresholds.maxFailedLoginPerIp }}</span>
+              <span class="threshold-desc">en {{ formatMs(data.thresholds.windowMs) }}</span>
+            </div>
+            <div class="threshold-item">
+              <span class="threshold-label">Max requests por IP</span>
+              <span class="threshold-value">{{ data.thresholds.maxRequestsPerIp }}</span>
+              <span class="threshold-desc">en {{ formatMs(data.thresholds.windowMs) }}</span>
+            </div>
+            <div class="threshold-item">
+              <span class="threshold-label">Ventana de monitoreo</span>
+              <span class="threshold-value">{{ formatMs(data.thresholds.windowMs) }}</span>
+            </div>
+            <div class="threshold-item">
+              <span class="threshold-label">Duración de bloqueo</span>
+              <span class="threshold-value">{{ formatMs(data.thresholds.blockDurationMs) }}</span>
+            </div>
+            <div class="threshold-item">
+              <span class="threshold-label">Payload máximo</span>
+              <span class="threshold-value">{{ (data.thresholds.maxPayloadSize / 1024).toFixed(0) }}KB</span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ================================================================
+       SIEM TAB
+  ================================================================ -->
+  @if (activeTab() === 'siem') {
+    <div class="space-y-6">
+      <!-- Summary Cards -->
+      @if (summary(); as s) {
+        <div class="grid grid-cols-4 gap-4">
+          <div class="stat-card">
+            <p class="stat-value">{{ s.totalEvents }}</p>
+            <p class="stat-label">Eventos totales</p>
+          </div>
+          <div class="stat-card">
+            <p class="stat-value text-primary-600">{{ s.todayCount }}</p>
+            <p class="stat-label">Eventos hoy</p>
+          </div>
+          <div class="stat-card">
+            <p class="stat-value">{{ s.byEvent.length }}</p>
+            <p class="stat-label">Tipos de evento</p>
+          </div>
+          <div class="stat-card">
+            <p class="stat-value">{{ s.bySeverity.length }}</p>
+            <p class="stat-label">Niveles de severidad</p>
+          </div>
+        </div>
+
+        <!-- Summary by Event Type -->
+        @if (s.byEvent.length > 0) {
+          <div class="section-card">
+            <h3 class="section-title">Conteo por Tipo de Evento</h3>
+            <div class="space-y-2">
+              @for (item of s.byEvent; track item.event) {
+                <div class="flex items-center gap-3">
+                  <span class="text-[14px]">{{ eventIcon(item.event) }}</span>
+                  <span class="text-[13px] font-medium text-[#334155] w-40 truncate">{{ item.event }}</span>
+                  <div class="flex-1 h-5 bg-[#F1F5F9] rounded-full overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-500"
+                      [style.width.%]="(item.count / s.totalEvents) * 100"
+                      [class.bg-red-500]="item.event.includes('WAF') || item.event.includes('FIM')"
+                      [class.bg-amber-500]="item.event.includes('IDS') || item.event.includes('LOGIN_FAILED')"
+                      [class.bg-emerald-500]="item.event.includes('LOGIN_SUCCESS') || item.event.includes('MFA_ENABLED')"
+                      [class.bg-blue-500]="!item.event.includes('WAF') && !item.event.includes('FIM') && !item.event.includes('IDS') && !item.event.includes('LOGIN_FAILED') && !item.event.includes('LOGIN_SUCCESS') && !item.event.includes('MFA_ENABLED')">
+                    </div>
+                  </div>
+                  <span class="text-[12px] font-bold text-[#0F172A] w-12 text-right">{{ item.count }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Summary by Severity -->
+        @if (s.bySeverity.length > 0) {
+          <div class="section-card">
+            <h3 class="section-title">Conteo por Severidad</h3>
+            <div class="grid grid-cols-4 gap-3">
+              @for (item of s.bySeverity; track item.severity) {
+                <div class="rounded-lg border p-3 text-center"
+                  [class.border-red-200]="item.severity === 'critical'"
+                  [class.border-orange-200]="item.severity === 'high'"
+                  [class.border-amber-200]="item.severity === 'medium'"
+                  [class.border-blue-200]="item.severity === 'low' || item.severity === 'info'">
+                  <p class="text-lg font-bold"
+                    [class.text-red-600]="item.severity === 'critical'"
+                    [class.text-orange-600]="item.severity === 'high'"
+                    [class.text-amber-600]="item.severity === 'medium'"
+                    [class.text-blue-600]="item.severity === 'low' || item.severity === 'info'">
+                    {{ item.count }}
+                  </p>
+                  <p class="text-[11px] text-[#64748B] capitalize">{{ item.severity }}</p>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      }
+
+      <!-- Filters -->
+      <div class="section-card">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="section-title mb-0">Registro Centralizado de Eventos</h3>
+          <span class="text-[11px] text-[#64748B]">Total: {{ logsTotal() }} eventos</span>
+        </div>
+        <div class="flex flex-wrap gap-3 mb-4">
+          <select (change)="filterEvent.set(($any($event.target)).value); applyFilters()"
+            class="filter-select">
+            <option value="">Todos los eventos</option>
+            <option value="WAF_BLOCKED">WAF_BLOCKED</option>
+            <option value="IDS_DETECTED">IDS_DETECTED</option>
+            <option value="FIM_CHANGE">FIM_CHANGE</option>
+            <option value="LOGIN_SUCCESS">LOGIN_SUCCESS</option>
+            <option value="LOGIN_FAILED">LOGIN_FAILED</option>
+            <option value="LOGIN_LOCKED">LOGIN_LOCKED</option>
+            <option value="MFA_ENABLED">MFA_ENABLED</option>
+            <option value="MFA_DISABLED">MFA_DISABLED</option>
+            <option value="PASSWORD_CHANGED">PASSWORD_CHANGED</option>
+            <option value="PASSWORD_RESET">PASSWORD_RESET</option>
+            <option value="WEBHOOK_RECEIVED">WEBHOOK_RECEIVED</option>
+            <option value="WEBHOOK_REJECTED">WEBHOOK_REJECTED</option>
+          </select>
+          <select (change)="filterSeverity.set(($any($event.target)).value); applyFilters()"
+            class="filter-select">
+            <option value="">Todas las severidades</option>
+            <option value="critical">Crítico</option>
+            <option value="high">Alto</option>
+            <option value="medium">Medio</option>
+            <option value="low">Bajo</option>
+            <option value="info">Info</option>
+          </select>
+          <input type="text" placeholder="Filtrar por IP..."
+            [value]="filterIp()"
+            (input)="filterIp.set(($any($event.target)).value)"
+            class="filter-input"
+          />
+          <input type="text" placeholder="Filtrar por email..."
+            [value]="filterEmail()"
+            (input)="filterEmail.set(($any($event.target)).value)"
+            class="filter-input"
+          />
+          <button (click)="applyFilters()" class="px-4 py-2 rounded-lg bg-[#0F172A] text-white text-[12px] font-semibold hover:bg-[#1E293B] transition-colors">
+            Filtrar
+          </button>
+          <button (click)="clearFilters()" class="px-4 py-2 rounded-lg border border-[#CBD5E1] text-[12px] font-semibold text-[#475569] hover:bg-[#F1F5F9] transition-colors">
+            Limpiar
+          </button>
+        </div>
+
+        <!-- Logs Table -->
+        @if (logs().length === 0) {
+          <div class="py-12 text-center">
+            <p class="text-[13px] text-[#94A3B8]">No hay eventos de seguridad registrados.</p>
+          </div>
+        } @else {
+          <div class="overflow-x-auto">
+            <table class="w-full text-left">
+              <thead>
+                <tr class="text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-b border-[#E2E8F0]">
+                  <th class="py-3 px-3">Tiempo</th>
+                  <th class="py-3 px-3">Evento</th>
+                  <th class="py-3 px-3">Severidad</th>
+                  <th class="py-3 px-3">IP</th>
+                  <th class="py-3 px-3">Usuario</th>
+                  <th class="py-3 px-3">Detalles</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[#F1F5F9]">
+                @for (log of logs(); track log.id) {
+                  <tr class="text-[13px] hover:bg-[#F8FAFC]">
+                    <td class="py-2.5 px-3 text-[#64748B] whitespace-nowrap">{{ log.timestamp | date:'HH:mm:ss dd/MM' }}</td>
+                    <td class="py-2.5 px-3">
+                      <div class="flex items-center gap-1.5">
+                        <span>{{ eventIcon(log.event) }}</span>
+                        <span class="font-semibold text-[#0F172A]">{{ log.event }}</span>
+                      </div>
+                    </td>
+                    <td class="py-2.5 px-3">
+                      <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border {{ severityBadge(log.severity) }}">
+                        {{ log.severity }}
+                      </span>
+                    </td>
+                    <td class="py-2.5 px-3 font-mono text-[12px] text-[#475569]">{{ log.ip || '—' }}</td>
+                    <td class="py-2.5 px-3 text-[#475569]">{{ log.email || log.userId || '—' }}</td>
+                    <td class="py-2.5 px-3">
+                      @if (log.details) {
+                        <code class="text-[10px] font-mono text-[#64748B] break-all">{{ JSON.stringify(log.details).slice(0, 80) }}{{ JSON.stringify(log.details).length > 80 ? '...' : '' }}</code>
+                      } @else {
+                        <span class="text-[#CBD5E1]">—</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="flex items-center justify-between mt-4">
+            <p class="text-[12px] text-[#64748B]">
+              Mostrando {{ logOffset() + 1 }}–{{ Math.min(logOffset() + logLimit, logsTotal()) }} de {{ logsTotal() }}
+            </p>
+            <div class="flex gap-2">
+              <button (click)="prevPage()" [disabled]="logOffset() === 0"
+                class="px-3 py-1.5 rounded-lg border border-[#CBD5E1] text-[12px] font-semibold text-[#475569] hover:bg-[#F1F5F9] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                Anterior
+              </button>
+              <button (click)="nextPage()" [disabled]="logOffset() + logLimit >= logsTotal()"
+                class="px-3 py-1.5 rounded-lg border border-[#CBD5E1] text-[12px] font-semibold text-[#475569] hover:bg-[#F1F5F9] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                Siguiente
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

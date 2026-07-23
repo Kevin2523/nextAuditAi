@@ -11,6 +11,7 @@ import {
   PasskeyLoginBeginDto,
   PasskeyLoginCompleteDto,
 } from './dto/passkey.dto';
+import { RefreshDto } from './dto/refresh.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { AuthService } from './services/auth.service';
@@ -26,6 +27,11 @@ export class AuthController {
   @Post('login')
   login(@Body() body: LoginDto) {
     return this.authService.login(body);
+  }
+
+  @Post('refresh')
+  refresh(@Body() body: RefreshDto) {
+    return this.authService.refresh(body);
   }
 
   @Post('forgot-password')

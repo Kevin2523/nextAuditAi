@@ -1,0 +1,140 @@
+.monitoring-container {
+  max-width: 1200px;
+}
+
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.tab-active {
+  border-bottom-color: #2563EB;
+  color: #2563EB;
+}
+
+.tab-inactive {
+  border-bottom-color: transparent;
+  color: #64748B;
+}
+
+.tab-inactive:hover {
+  color: #0F172A;
+  background: #F8FAFC;
+}
+
+.stat-card {
+  background: white;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: #0F172A;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: #64748B;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.section-card {
+  background: white;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0F172A;
+  margin-bottom: 16px;
+}
+
+.threshold-item {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.threshold-label {
+  font-size: 11px;
+  color: #64748B;
+  font-weight: 500;
+}
+
+.threshold-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0F172A;
+}
+
+.threshold-desc {
+  font-size: 10px;
+  color: #94A3B8;
+}
+
+.filter-select {
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid #CBD5E1;
+  padding: 0 10px;
+  font-size: 12px;
+  color: #334155;
+  background: white;
+  outline: none;
+  min-width: 160px;
+}
+
+.filter-select:focus {
+  border-color: #2563EB;
+  ring: 2px solid #2563EB;
+}
+
+.filter-input {
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid #CBD5E1;
+  padding: 0 10px;
+  font-size: 12px;
+  color: #334155;
+  background: white;
+  outline: none;
+  flex: 1;
+  min-width: 140px;
+}
+
+.filter-input:focus {
+  border-color: #2563EB;
+  ring: 2px solid #2563EB;
+}
+
+.filter-input::placeholder {
+  color: #94A3B8;
+}
+
+table th {
+  white-space: nowrap;
+}
+
+table td {
+  vertical-align: middle;
+}
