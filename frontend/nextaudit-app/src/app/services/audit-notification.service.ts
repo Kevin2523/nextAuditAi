@@ -64,7 +64,7 @@ export class AuditNotificationService {
     this.notifications.update((items) => items.filter((item) => !item.read));
   }
 
-  private pushOnce(input: {
+  pushOnce(input: {
     key: string;
     title: string;
     message: string;
